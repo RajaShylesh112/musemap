@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Ticket Booking</title>
+    <link rel="stylesheet" href="booking.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <a href="#">Home</a>
+        <a href="#">Booking</a>
+        <a href="#">Chatbot</a>
+        <a href="#">Quiz</a>
+        <a href="#">Admin</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Ticket Selection Section -->
+        <div class="ticket-selection">
+            <h2>Select Your Tickets</h2>
+
+            <label>Ticket Type:</label>
+            <select>
+                <option>Adult - $20</option>
+                <option>Child - $10</option>
+                <option>Senior - $15</option>
+            </select>
+
+            <label>Number of Tickets:</label>
+            <input type="number" value="1" min="1">
+
+            <label>Visit Date:</label>
+            <input type="date">
+            <div class="extras">
+                <span>Extras:</span>
+                <label><input type="checkbox"> Audio Guide ($5)</label>
+                <label><input type="checkbox"> Guided Tour ($15)</label>
+            </div>
+            
+        </div>
+
+        <!-- Booking Summary Section -->
+        <div class="booking-summary">
+            <h2>Booking Summary</h2>
+            <p><strong>Ticket Type:</strong> Adult</p>
+            <p><strong>Number of Tickets:</strong> 1</p>
+            <p><strong>Visit Date:</strong> 2023-12-15</p>
+            <p><strong>Extras:</strong> Audio Guide</p>
+            <p><strong>Total:</strong> $25</p>
+
+            <a href="#" class="proceed-btn">PROCEED TO PAYMENT</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div>
+            <strong>MuseMap</strong><br>
+            123 Museum Lane, Art City, AC 12345
+        </div>
+        <div class="qr-code"></div>
+    </div>
+
+</body>
+</html>
