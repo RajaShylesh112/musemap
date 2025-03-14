@@ -1,0 +1,163 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuseMap - Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fde5d4;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #f16322;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+            font-size: 18px;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        main {
+            max-width: 900px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2, h3 {
+            color: #f16322;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #f16322;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #d14e1a;
+        }
+        .museum-list {
+            margin-top: 20px;
+        }
+        .museum-item {
+            background: #fff3eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .museum-item button {
+            background-color: #d14e1a;
+            padding: 10px 15px;
+            font-size: 14px;
+            border-radius: 5px;
+            width: 350px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">MuseMap</div>
+        <nav class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="booking.html">Booking</a>
+            <a href="quiz.html">Quiz</a>
+            <a href="login.html">Login</a>
+            <a href="chatbot.html">Chatbot</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Admin Panel - Manage Museums</h2>
+        <form>
+            <label for="museum-name">Museum Name:</label>
+            <input type="text" id="museum-name" name="museum-name" required>
+
+            <label for="museum-location">Location:</label>
+            <input type="text" id="museum-location" name="museum-location" required>
+
+            <label for="museum-description">Description:</label>
+            <textarea id="museum-description" name="museum-description" rows="4" required></textarea>
+
+            <button type="submit">Add Museum</button>
+        </form>
+        
+        <h3>Existing Museums</h3>
+        <div class="museum-list">
+            <div class="museum-item">
+                <span>National Museum - New Delhi</span>
+                <button>Remove</button>
+            </div>
+            <div class="museum-item">
+                <span>Indian Museum - Kolkata</span>
+                <button>Remove</button>
+            </div>
+            <div class="museum-item">
+                <span>Chhatrapati Shivaji Museum - Mumbai</span>
+                <button>Remove</button>
+            </div>
+        </div>
+        
+        <h2>Create Quiz</h2>
+        <form>
+            <label for="quiz-question">Question:</label>
+            <input type="text" id="quiz-question" name="quiz-question" required>
+
+            <label for="quiz-option1">Option 1:</label>
+            <input type="text" id="quiz-option1" name="quiz-option1" required>
+            
+            <label for="quiz-option2">Option 2:</label>
+            <input type="text" id="quiz-option2" name="quiz-option2" required>
+            
+            <label for="quiz-option3">Option 3:</label>
+            <input type="text" id="quiz-option3" name="quiz-option3" required>
+            
+            <label for="quiz-option4">Option 4:</label>
+            <input type="text" id="quiz-option4" name="quiz-option4" required>
+
+            <label for="quiz-answer">Correct Answer:</label>
+            <input type="text" id="quiz-answer" name="quiz-answer" required>
+
+            <button type="submit">Add Question</button>
+        </form>
+    </main>
+</body>
+</html>

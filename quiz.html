@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Quiz</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif; /* Use a Google Forms-like font */
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa; /* Light background */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-top:60px;
+            overflow-x: hidden;
+        }
+
+        .quiz-container {
+            
+            padding: 30px; /* Increased padding */
+            width: 90%; /* Increased width */
+            max-width: 800px; /* Increased max-width */
+            margin-top: 30px; /* Increased margin */
+            margin-bottom: 10px; /* Increased margin */
+        }
+
+        .navbar {
+            width: 100%; /* Full width */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5%; /* Increased padding on both sides */
+            background: #fff;
+            border-bottom: 2px solid #ddd;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            margin-left: 20px; /* Moves the logo slightly to the right */
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-links li {
+            margin: 0 15px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 600;
+            padding: 10px 15px;
+            display: block;
+        }
+
+        .nav-links a:hover {
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+
+
+        .question-box {
+            border: 1px solid #e0e0e0;
+            padding: 25px; /* Increased padding */
+            margin-bottom: 20px; /* Increased margin */
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        .question {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .options {
+            list-style: none;
+            padding: 0;
+        }
+
+        .options li {
+            margin-bottom: 12px;
+        }
+
+        .options label {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .options label:hover {
+            background-color: #f0f0f0;
+        }
+
+        .options input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        #submit-btn {
+            background-color: #f97316; /* Google Forms blue */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 30px;
+            font-size: 1em;
+            transition: background-color 0.2s;
+        }
+
+        #submit-btn:hover {
+            background-color: #ef8a10;
+        }
+
+        #result {
+            margin-top: 30px;
+            font-weight: 500;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .reward-message {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.1em;
+            color: #2e7d32; /* Green for success */
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .footer {
+            width: 100%;
+            background: #f4d1b5;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
+
+        .footer-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #000;
+            font-weight: bold;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">Musemap</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="booking.html">Booking</a></li>
+            <li><a href="chatbot.html">Chatbot</a></li>
+            <li><a href="quiz.html" class="active">Quiz</a></li>
+            <li><a href="admin.html">Admin</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="quiz-container" id="quiz-container">
+        </div>
+
+        <button id="submit-btn">Submit Quiz</button>
+        <div id="result"></div>
+        <div class="reward-message" id="reward-message"></div>
+    </main>
+    
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#">Contact Us</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="about.html">About</a>
+        </div>
+        <p>&copy; 2025 MuseMap. All rights reserved.</p>
+    </footer>
+    <script>
+        const quizData = [
+            // ... (same quizData as before) ...
+            {
+                question: "Which famous artifact is displayed in our main hall?",
+                options: ["The Rosetta Stone", "The Venus de Milo", "The Terra Cotta Army", "The Mona Lisa"],
+                correctAnswer: "The Rosetta Stone"
+            },
+            {
+                question: "What era does the Egyptian exhibit primarily focus on?",
+                options: ["Old Kingdom", "Middle Kingdom", "New Kingdom", "All of the above"],
+                correctAnswer: "All of the above"
+            },
+             {
+                question: "How many dinosaur skeletons are currently on display?",
+                options: ["2", "3", "4", "5"],
+                correctAnswer: "3"
+            },
+            {
+                question: "What is the name of the featured artist in the contemporary art section?",
+                options: ["Pablo Picasso", "Vincent van Gogh", "Frida Kahlo", "Jackson Pollock"],
+                correctAnswer: "Jackson Pollock"
+            },
+            {
+                question: "Which ancient civilization's pottery is showcased in the ceramics gallery?",
+                options: ["Roman", "Greek", "Mayan", "Chinese"],
+                correctAnswer: "Greek"
+            },
+            {
+                question: "What type of ancient tools are displayed in the archaeology section?",
+                options: ["Stone tools", "Metal tools", "Wooden tools", "All of the above"],
+                correctAnswer: "All of the above"
+            },
+            {
+                question: "Which animal skeleton is prominently featured in the natural history exhibit?",
+                options: ["Elephant", "Whale", "Giraffe", "Lion"],
+                correctAnswer: "Whale"
+            },
+            {
+                question: "In the space exploration exhibit, which planet is represented by a large-scale model?",
+                options: ["Mars", "Jupiter", "Saturn", "Venus"],
+                correctAnswer: "Mars"
+            },
+            {
+                question: "What historical event is depicted in the large mural in the history hall?",
+                options: ["The French Revolution", "The American Civil War", "World War I", "The Renaissance"],
+                correctAnswer: "The Renaissance"
+            },
+            {
+                question: "Which musical instrument is highlighted in the music history section?",
+                options: ["Piano", "Violin", "Harp", "Ancient Flute"],
+                correctAnswer: "Ancient Flute"
+            }
+        ];
+
+        const quizContainer = document.getElementById("quiz-container");
+        const submitButton = document.getElementById("submit-btn");
+        const resultElement = document.getElementById("result");
+        const rewardMessageElement = document.getElementById("reward-message");
+
+        function buildQuiz() {
+            quizData.forEach((question, questionIndex) => {
+                const questionBox = document.createElement("div");
+                questionBox.classList.add("question-box");
+
+                const questionDiv = document.createElement("div");
+                questionDiv.classList.add("question");
+                questionDiv.innerHTML = `<p>${question.question}</p>`;
+
+                const optionsList = document.createElement("ul");
+                optionsList.classList.add("options");
+
+                question.options.forEach((option, optionIndex) => {
+                    const optionItem = document.createElement("li");
+                    optionItem.innerHTML = `
+                        <label>
+                            <input type="radio" name="question${questionIndex}" value="${option}">
+                            ${option}
+                        </label>
+                    `;
+                    optionsList.appendChild(optionItem);
+                });
+
+                questionDiv.appendChild(optionsList);
+                questionBox.appendChild(questionDiv);
+                quizContainer.appendChild(questionBox);
+            });
+        }
+
+        function showResults() {
+            let score = 0;
+            quizData.forEach((question, questionIndex) => {
+                const selectedOption = document.querySelector(`input[name="question${questionIndex}"]:checked`);
+                if (selectedOption && selectedOption.value === question.correctAnswer) {
+                    score++;
+                }
+            });
+
+            resultElement.textContent = `You scored ${score} out of ${quizData.length}!`;
+            if(score >= quizData.length/2){
+              rewardMessageElement.textContent = "Congratulations! You've earned a discount on your next visit!";
+            } else {
+              rewardMessageElement.textContent = "Better luck next time! Keep exploring our museum!";
+            }
+
+            quizContainer.style.display = "none";
+            submitButton.style.display = "none";
+        }
+
+        submitButton.addEventListener("click", showResults);
+        buildQuiz();
+    </script>
+</body>
+</html>

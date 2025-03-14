@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FAE5D3;
+        }
+
+        header {
+            background-color: #FAD2B7;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: black;
+            font-weight: bold;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .booking-history, .earned-rewards {
+            display: flex;
+            gap: 15px;
+        }
+
+        .box {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+        }
+
+        .account-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .update-btn {
+            background-color: #FF6A00;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        footer {
+            background-color: #FAD2B7;
+            text-align: center;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .nav-links a.active {
+            color: #FF6A00;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏛 MuseMap</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="museum.html">Museums</a>
+            <a href="about.html">About</a>
+            <a href="dashboard.html" class="active">Dashboard</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>Welcome, [User's Name]!</h2>
+        <p>Here is a summary of your activities and opportunities with us.</p>
+
+        <h3>Booking History</h3>
+        <div class="booking-history">
+            <div class="box">
+                <h4>Museum of Modern Art</h4>
+                <p>Date: 2023-10-12</p>
+                <p>Status: Confirmed</p>
+            </div>
+            <div class="box">
+                <h4>Natural History Museum</h4>
+                <p>Date: 2023-09-20</p>
+                <p>Status: Attended</p>
+            </div>
+            <div class="box">
+                <h4>Science Museum</h4>
+                <p>Date: 2023-08-18</p>
+                <p>Status: Canceled</p>
+            </div>
+        </div>
+
+        <h3>Account Settings</h3>
+        <div class="account-settings section">
+            <label>Current Password</label>
+            <input type="password" placeholder="Enter current password">
+            <label>New Password</label>
+            <input type="password" placeholder="Enter new password">
+            <label>Confirm Password</label>
+            <input type="password" placeholder="Confirm new password">
+            <button class="update-btn">Change Password</button>
+        </div>
+
+        <h3>Earned Rewards</h3>
+        <div class="earned-rewards">
+            <div class="box">⭐ Points: 120</div>
+            <div class="box">🎁 Rewards Available</div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p><a href="#">Contact Us</a> | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+        <p>&copy; 2025 MuseMap. All rights reserved.</p>
+        <p>
+            <a href="#"><img src="assets/images/facebook-icon.png" alt="Facebook"></a>
+            <a href="#"><img src="assets/images/twitter-icon.png" alt="Twitter"></a>
+            <a href="#"><img src="assets/images/instagram-icon.png" alt="Instagram"></a>
+        </p>
+    </footer>
+</body>
+</html>

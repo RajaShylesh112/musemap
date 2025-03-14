@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuseMap Chatbot</title>
+    <style> 
+    /* Reset Styles */
+body, h3, ul, li, p {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 15px 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: black;
+    margin: 0 15px;
+    font-weight: bold;
+}
+
+.nav-links a.active {
+    color: orange;
+}
+
+/* Main Layout */
+.container {
+    display: flex;
+    height: calc(100vh - 50px);
+}
+
+/* Chat Section */
+.chat-section {
+    flex: 3;
+    background-color: #FAD7A0; /* Light peach background */
+    padding: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Message Box */
+.message-box {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.bot-message {
+    font-weight: bold;
+    color: red;
+}
+
+.bot-message span {
+    font-weight: normal;
+    color: black;
+}
+
+/* Input Box */
+.input-container {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 5px;
+    background: white;
+    border-radius: 5px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid gray;
+    border-radius: 5px;
+}
+
+/* FAQ Section */
+.faq-section {
+    flex: 1;
+    background-color: #E67E22; /* Bright orange */
+    color: white;
+    padding: 20px;
+}
+
+.faq-section h3 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.faq-section ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.faq-section li {
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: color 0.3s;
+    font-size: 16px;
+}
+
+.faq-section li:hover {
+    color: #FFD700; /* Gold */
+}
+
+nav a.active {
+    color: #f16322;
+}
+
+    </style> 
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">MuseMap</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="booking.html">Booking</a>
+            <a href="chatbot.html" class="active">Chatbot</a>
+            <a href="quiz.html">Quiz</a>
+            <a href="admin.html">Admin</a>
+            <a href="about.html">About</a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <div class="message-box">
+                <p><strong>User:</strong> What are your opening hours?</p>
+                <p class="bot-message">Bot: <span>We are open from 9 AM to 5 PM from Monday to Sunday.</span></p>
+            </div>
+            <div class="message-box">
+                <p><strong>User:</strong> Do you have guided tours?</p>
+                <p class="bot-message">Bot: <span>Yes, we offer guided tours daily at 11 AM and 3 PM.</span></p>
+            </div>
+            <div class="input-container">
+                <input type="text" placeholder="Type your question here...">
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="faq-section">
+            <h3>Frequently Asked Questions</h3>
+            <ul>
+                <li>What are your opening hours?</li>
+                <li>Do you have guided tours?</li>
+                <li>How much is the entrance fee?</li>
+                <li>Are there any current exhibitions?</li>
+                <li>Where can I park?</li>
+            </ul>
+        </div>
+
+    </div>
+
+</body>
+</html>

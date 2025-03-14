@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Ticket Booking</title>
+    <style> 
+    html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #fff;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 15px;
+    background-color: #fff;
+    border-bottom: 2px solid #ddd;
+}
+
+.navbar a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+}
+
+.navbar a.active {
+    color: #f97316;
+}
+
+/* Main Container */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 30px;
+    max-width: 80%;
+    margin: auto;
+    padding: 40px 20px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+/* Sections Side by Side on Larger Screens */
+.ticket-selection,
+.booking-summary {
+    flex: 1;
+    max-width: 50%;
+    min-width: 500px;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+}
+
+/* Ticket Selection Background */
+.ticket-selection {
+    background-color: #f8d7c4;
+    color: black;
+}
+
+/* Booking Summary Background */
+.booking-summary {
+    background-color: #f97316;
+    color: black;
+}
+
+/* Center Headings */
+.ticket-selection h2,
+.booking-summary h2 {
+    text-align: left;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+/* Form Inputs */
+.ticket-selection select,
+.ticket-selection input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #f7f7f7;
+    border-radius: 5px;
+    background-color: #ffffff;
+}
+
+/* Proceed Button */
+.proceed-btn {
+    background-color: white;
+    color: black;
+    font-weight: bold;
+    width: 100%;
+    padding: 12px;
+    border: 2px solid black;
+    cursor: pointer;
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+    margin-top: 15px;
+}
+
+.proceed-btn:hover {
+    background-color: #ddd;
+}
+
+/* Checkbox styling */
+.extras {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.extras label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* Footer */
+.footer {
+    background: #f4d1b5;
+    text-align: center;
+    padding: 20px;
+    margin-top: auto;
+    width: 100%;
+}
+
+.footer-links a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #000;
+    font-weight: bold;
+}
+
+/* QR Code */
+.qr-code {
+    width: 70px;
+    height: 70px;
+    background-image: url('path/to/qr-code.png');
+    background-size: cover;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+        max-width: 100%;
+        padding: 20px;
+    }
+
+    .ticket-selection,
+    .booking-summary {
+        max-width: 90%;
+        min-width: unset;
+        margin-bottom: 20px;
+    }
+}
+
+    </style> 
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <a href="index.html">Home</a>
+        <a href="booking.html" class="active">Booking</a>
+        <a href="chatbot.html">Chatbot</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="admin.html">Admin</a>
+        <a href="about.html">About</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Ticket Selection Section -->
+        <div class="ticket-selection">
+            <h2>Select Your Tickets</h2>
+
+            <label>Ticket Type:</label>
+            <select>
+                <option>Adult - $20</option>
+                <option>Child - $10</option>
+                <option>Senior - $15</option>
+            </select>
+
+            <label>Number of Tickets:</label>
+            <input type="number" value="1" min="1">
+
+            <label>Visit Date:</label>
+            <input type="date">
+            <div class="extras">
+                <span>Extras:</span>
+                <label><input type="checkbox"> Audio Guide ($5)</label>
+                <label><input type="checkbox"> Guided Tour ($15)</label>
+            </div>
+            
+        </div>
+
+        <!-- Booking Summary Section -->
+        <div class="booking-summary">
+            <h2>Booking Summary</h2>
+            <p><strong>Ticket Type:</strong> Adult</p>
+            <p><strong>Number of Tickets:</strong> 1</p>
+            <p><strong>Visit Date:</strong> 2023-12-15</p>
+            <p><strong>Extras:</strong> Audio Guide</p>
+            <p><strong>Total:</strong> $25</p>
+
+            <a href="payment.html" class="proceed-btn">PROCEED TO PAYMENT</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#">Contact Us</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="about.html">About</a>
+        </div>
+        <p>&copy; 2025 MuseMap. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

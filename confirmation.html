@@ -1,0 +1,93 @@
+<!-- confirmation.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuseMap - Confirmation</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fde5d4;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #f16322;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+        .logo {
+            color: black;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .nav-links a {
+            color: black;
+            text-decoration: none;
+            margin-left: 15px;
+            font-size: 18px;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        main {
+            max-width: 500px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #f16322;
+        }
+        .confirmation-details {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .home-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #f16322;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .home-button:hover {
+            background-color: #d14e1a;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">MuseMap</div>
+        <nav class="nav-links">
+            <a href="home.html">Home</a>
+            <a href="booking.html">Booking</a>
+            <a href="quiz.html">Quiz</a>
+            <a href="login.html">Login</a>
+            <a href="chatbot.html">Chatbot</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Payment Successful!</h2>
+        <p>Thank you for your booking. Your transaction was successful.</p>
+        <div class="confirmation-details">
+            <p><strong>Booking ID:</strong> #123456</p>
+            <p><strong>Museum:</strong> Example Museum</p>
+            <p><strong>Date:</strong> March 10, 2025</p>
+            <p><strong>Tickets:</strong> 2 Adults, 1 Child</p>
+            <p><strong>Total Paid:</strong> $50.00</p>
+        </div>
+        <a href="home.html" class="home-button">Return to Home</a>
+    </main>
+</body>
+</html>
