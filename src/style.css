@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  background-color: #fde5d4;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.navbar {
+  @apply flex justify-between items-center p-4 bg-white border-b-2 border-gray-200;
+}
+
+.nav-links {
+  @apply flex gap-4;
+}
+
+.nav-links a {
+  @apply text-gray-800 font-semibold hover:text-primary;
+}
+
+.nav-links a.active {
+  @apply text-primary;
+}
+
+.form-container {
+  @apply max-w-md mx-auto my-12 bg-white p-8 rounded-lg shadow-md;
+}
+
+.form-container input {
+  @apply w-full p-2 my-2 border border-gray-300 rounded;
+}
+
+.form-container button {
+  @apply w-full p-2 mt-4 bg-primary text-white rounded hover:bg-orange-600;
+}
+
+.footer {
+  @apply bg-accent text-center p-4 mt-auto;
+}
+
+.footer-links {
+  @apply flex justify-center gap-4 mb-2;
+}
+
+.footer-links a {
+  @apply text-gray-800 font-semibold;
+}
+
+.museum-card {
+  @apply bg-white p-4 rounded-lg shadow-md;
+}
+
+.museum-card img {
+  @apply w-full h-48 object-cover rounded mb-4;
+}
+
+.btn {
+  @apply bg-primary text-white px-4 py-2 rounded hover:bg-orange-600;
+}
+
+/* Home page specific styles */
+.cen {
+  @apply relative h-[70vh] flex items-end justify-center text-center text-black p-5;
+  background: url('/museum1.jpg') no-repeat center center/cover;
+}
+
+.cen-content {
+  @apply bg-white/80 p-5 rounded-lg;
+}
+
+/* Museum list specific styles */
+.museums-container {
+  @apply max-w-7xl mx-auto p-5;
+}
+
+.search-bar {
+  @apply flex justify-center gap-4 mb-8;
+}
+
+.museum-list {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
+}
+
+/* Booking page specific styles */
+.container {
+  @apply max-w-7xl mx-auto p-5 flex flex-wrap gap-8;
+}
+
+.ticket-selection,
+.booking-summary {
+  @apply flex-1 min-w-[300px] p-6 rounded-lg shadow-lg;
+}
+
+.ticket-selection {
+  @apply bg-secondary;
+}
+
+.booking-summary {
+  @apply bg-primary text-white;
+}
+
+/* Payment page specific styles */
+.payment-container {
+  @apply max-w-md mx-auto my-12 bg-white p-8 rounded-lg shadow-md;
+}
+
+/* Museum details page specific styles */
+.museum-content {
+  @apply max-w-7xl mx-auto p-5;
+}
+
+.museum-header {
+  @apply relative h-[400px] rounded-lg overflow-hidden;
+}
+
+.museum-info {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8;
+}
+
+.museum-details {
+  @apply lg:col-span-2;
+}
+
+.booking-card {
+  @apply bg-white p-6 rounded-lg shadow-lg sticky top-4;
+}
