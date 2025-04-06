@@ -1,11 +1,22 @@
+/**
+ * Home Page Component
+ * Main landing page of the Museum Map application
+ * Features a hero section and key features overview
+ */
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import heroImg from '../assets/images/home_page_img1.jpg';
 
+/**
+ * HomePage Component
+ * Renders the main landing page with hero section and features
+ * @returns {JSX.Element} The home page component
+ */
 export function HomePage() {
     return (
         <div className="min-h-screen">
-            {/* Hero Section */}
+            {/* Hero Section - Full screen banner with call-to-action buttons */}
             <div className="relative h-screen">
                 <div className="absolute inset-0">
                     <img 
@@ -42,10 +53,11 @@ export function HomePage() {
                 </div>
             </div>
 
-            {/* Features Section */}
+            {/* Features Section - Highlights key application features */}
             <div className="py-16 bg-gray-50">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Search Feature */}
                         <div className="text-center">
                             <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,6 +67,8 @@ export function HomePage() {
                             <h3 className="text-xl font-semibold mb-2">Easy Search</h3>
                             <p className="text-gray-600">Find museums based on location, type, and price range</p>
                         </div>
+
+                        {/* Quiz Feature */}
                         <div className="text-center">
                             <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,6 +78,8 @@ export function HomePage() {
                             <h3 className="text-xl font-semibold mb-2">Interactive Quiz</h3>
                             <p className="text-gray-600">Test your knowledge about Indian museums and culture</p>
                         </div>
+
+                        {/* Booking Feature */}
                         <div className="text-center">
                             <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

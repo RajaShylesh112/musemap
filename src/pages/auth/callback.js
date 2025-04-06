@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSupabase } from '../../supabase';
-import { createUserProfile, getUserProfile } from '../../services/database';
 
 export function AuthCallbackPage() {
     const navigate = useNavigate();
@@ -16,28 +15,62 @@ export function AuthCallbackPage() {
                 if (sessionError) throw sessionError;
 
                 if (!session) {
+                    console.error('No session found');
                     navigate('/login');
                     return;
                 }
 
                 const { user } = session;
+                console.log('OAuth user:', user);
 
-                // Check if profile exists
-                let profile = await getUserProfile(user.id);
+                // First check if user exists in admin table by email
+                const { data: adminData } = await supabase
+                    .from('admin')
+                    .select('*')
+                    .eq('email', user.email)
+                    .single();
 
-                // If no profile exists, create one
-                if (!profile) {
-                    const userData = {
-                        name: user.user_metadata.full_name || user.user_metadata.name || user.email.split('@')[0],
-                        email: user.email,
-                        isAdmin: false // Default to regular user for OAuth signups
+                if (adminData) {
+                    console.log('User is an admin');
+                    // Store session data
+                    const sessionData = {
+                        user: {
+                            id: adminData.admin_id,
+                            email: adminData.email,
+                            name: adminData.name,
+                            role: adminData.role
+                        }
                     };
-
-                    profile = await createUserProfile(user.id, userData);
+                    localStorage.setItem('userSession', JSON.stringify(sessionData));
+                    navigate('/admin/dashboard');
+                    return;
                 }
 
-                // Redirect based on role
-                navigate(profile.is_admin ? '/admin/dashboard' : '/dashboard');
+                // Then check if user exists in visitor table by email
+                const { data: visitorData } = await supabase
+                    .from('visitor')
+                    .select('*')
+                    .eq('email', user.email)
+                    .single();
+
+                if (visitorData) {
+                    console.log('User is a visitor');
+                    // Store session data
+                    const sessionData = {
+                        user: {
+                            id: visitorData.visitor_id,
+                            email: visitorData.email,
+                            name: visitorData.name,
+                            role: 'visitor'
+                        }
+                    };
+                    localStorage.setItem('userSession', JSON.stringify(sessionData));
+                    navigate('/dashboard');
+                    return;
+                }
+
+                console.error('User not found in either table');
+                throw new Error('User not found in the system');
             } catch (error) {
                 console.error('Auth callback error:', error);
                 navigate('/login');

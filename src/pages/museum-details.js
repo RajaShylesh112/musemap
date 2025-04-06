@@ -1,7 +1,18 @@
+/**
+ * Museum Details Page Component
+ * Displays detailed information about a specific museum
+ * Includes tabs for different sections: about, exhibits, facilities, and hours
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getSupabase } from '../supabase';
 
+/**
+ * MuseumDetailsPage Component
+ * Renders detailed information about a specific museum with interactive tabs
+ * @returns {JSX.Element} The museum details page component
+ */
 export function MuseumDetailsPage() {
     const [activeTab, setActiveTab] = useState('about');
     const [museumData, setMuseumData] = useState(null);
@@ -11,16 +22,20 @@ export function MuseumDetailsPage() {
     const { id } = useParams();
     const supabase = getSupabase();
 
+    // Fetch museum data when component mounts or ID changes
     useEffect(() => {
         fetchMuseumData();
     }, [id]);
 
+    /**
+     * Fetches museum data from the database
+     * Currently using mock data for demonstration
+     */
     const fetchMuseumData = async () => {
         try {
             setLoading(true);
             
-            // In a real app, you would fetch from your database
-            // For now, we'll use mock data based on the ID
+            // Mock data for demonstration
             const mockMuseums = {
                 1: {
                     id: 1,
@@ -155,6 +170,7 @@ export function MuseumDetailsPage() {
         }
     };
 
+    // Loading state
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -163,6 +179,7 @@ export function MuseumDetailsPage() {
         );
     }
 
+    // Error state
     if (error) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -175,18 +192,20 @@ export function MuseumDetailsPage() {
                     >
                         Back to Museums
                     </button>
-            </div>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="museum-details-container max-w-6xl mx-auto p-8">
+            {/* Museum Header */}
             <div className="header mb-8">
                 <h1 className="text-4xl font-bold mb-2">{museumData.name}</h1>
                 <p className="text-gray-600">{museumData.location}</p>
-          </div>
+            </div>
 
+            {/* Navigation Tabs */}
             <div className="tabs mb-6">
                 <div className="flex space-x-4 border-b">
                     {['about', 'exhibits', 'facilities', 'hours'].map(tab => (
@@ -202,10 +221,12 @@ export function MuseumDetailsPage() {
                             {tab}
                         </button>
                     ))}
-          </div>
-        </div>
+                </div>
+            </div>
 
+            {/* Tab Content */}
             <div className="content">
+                {/* About Tab */}
                 {activeTab === 'about' && (
                     <div className="space-y-4">
                         <p className="text-gray-700">{museumData.description}</p>
@@ -218,6 +239,7 @@ export function MuseumDetailsPage() {
                     </div>
                 )}
 
+                {/* Exhibits Tab */}
                 {activeTab === 'exhibits' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {museumData.exhibits.map((exhibit, index) => (
@@ -230,6 +252,7 @@ export function MuseumDetailsPage() {
                     </div>
                 )}
 
+                {/* Facilities Tab */}
                 {activeTab === 'facilities' && (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {museumData.facilities.map((facility, index) => (
@@ -241,6 +264,7 @@ export function MuseumDetailsPage() {
                     </div>
                 )}
 
+                {/* Hours Tab */}
                 {activeTab === 'hours' && (
                     <div className="space-y-2">
                         {Object.entries(museumData.openingHours).map(([day, hours]) => (
@@ -249,9 +273,9 @@ export function MuseumDetailsPage() {
                                 <span>{hours}</span>
                             </div>
                         ))}
-        </div>
+                    </div>
                 )}
-      </div>
-    </div>
+            </div>
+        </div>
     );
 }

@@ -13,14 +13,77 @@ export function Navigation() {
     }, []);
 
     const checkAuthStatus = async () => {
+        // Check local storage first
+        const localSession = localStorage.getItem('userSession');
+        const sessionStorageSession = sessionStorage.getItem('userSession');
+        const userSession = localSession || sessionStorageSession;
+
+        if (userSession) {
+            const parsedSession = JSON.parse(userSession);
+            setIsLoggedIn(true);
+            setIsAdmin(parsedSession.user.role === 'admin' || parsedSession.user.role === 'curator');
+            return;
+        }
+
+        // If no local session, check Supabase session
         const { data: { session } } = await supabase.auth.getSession();
-        setIsLoggedIn(!!session);
-        // You would typically check user role in your database
-        setIsAdmin(session?.user?.user_metadata?.isAdmin || false);
+        if (session) {
+            // Get user details from appropriate table
+            const { data: userData } = await supabase
+                .from('admin')
+                .select('*')
+                .eq('email', session.user.email)
+                .single();
+
+            if (userData) {
+                setIsLoggedIn(true);
+                setIsAdmin(true);
+                // Store session data
+                const sessionData = {
+                    user: {
+                        id: userData.admin_id,
+                        email: userData.email,
+                        name: userData.name,
+                        role: userData.role
+                    }
+                };
+                localStorage.setItem('userSession', JSON.stringify(sessionData));
+                return;
+            }
+
+            const { data: visitorData } = await supabase
+                .from('visitor')
+                .select('*')
+                .eq('email', session.user.email)
+                .single();
+
+            if (visitorData) {
+                setIsLoggedIn(true);
+                setIsAdmin(false);
+                // Store session data
+                const sessionData = {
+                    user: {
+                        id: visitorData.visitor_id,
+                        email: visitorData.email,
+                        name: visitorData.name,
+                        role: 'visitor'
+                    }
+                };
+                localStorage.setItem('userSession', JSON.stringify(sessionData));
+            }
+        } else {
+            setIsLoggedIn(false);
+            setIsAdmin(false);
+        }
     };
 
     const handleLogout = async () => {
+        // Clear Supabase session
         await supabase.auth.signOut();
+        // Clear local storage session
+        localStorage.removeItem('userSession');
+        // Clear session storage session
+        sessionStorage.removeItem('userSession');
         setIsLoggedIn(false);
         setIsAdmin(false);
         navigate('/');

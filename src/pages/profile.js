@@ -38,7 +38,12 @@ export function ProfilePage() {
 
     const handleLogout = async () => {
         try {
+            // Clear Supabase session
             await supabase.auth.signOut();
+            // Clear local storage session
+            localStorage.removeItem('userSession');
+            // Clear session storage session
+            sessionStorage.removeItem('userSession');
             navigate('/login');
         } catch (error) {
             setError(error.message);

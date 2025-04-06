@@ -1,3 +1,8 @@
+/**
+ * Main application entry point
+ * Sets up React Router and protected routes for the Museum Map application
+ */
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
@@ -22,13 +27,21 @@ import { ProfilePage } from './pages/profile'
 import { getSupabase } from './supabase'
 import './style.css'
 
-// Protected Route Component
+/**
+ * ProtectedRoute Component
+ * Wraps routes that require authentication
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components to render
+ * @param {boolean} props.requireAdmin - Whether admin privileges are required
+ * @returns {React.ReactNode} - Protected route or redirect
+ */
 function ProtectedRoute({ children, requireAdmin = false }) {
     const [loading, setLoading] = React.useState(true);
     const [user, setUser] = React.useState(null);
     const supabase = getSupabase();
 
     React.useEffect(() => {
+        // Check user authentication status
         const checkUser = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
@@ -42,6 +55,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
 
         checkUser();
 
+        // Subscribe to auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
         });
@@ -49,6 +63,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
         return () => subscription.unsubscribe();
     }, [supabase.auth]);
 
+    // Show loading spinner while checking auth
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -57,10 +72,12 @@ function ProtectedRoute({ children, requireAdmin = false }) {
         );
     }
 
+    // Redirect to login if not authenticated
     if (!user) {
         return <Navigate to="/login" />;
     }
 
+    // Redirect to dashboard if admin access required but not granted
     if (requireAdmin && !user.user_metadata?.isAdmin) {
         return <Navigate to="/dashboard" />;
     }
@@ -68,12 +85,13 @@ function ProtectedRoute({ children, requireAdmin = false }) {
     return children;
 }
 
+// Render the application
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Router>
       <Layout>
         <Routes>
-          {/* Public Routes */}
+          {/* Public Routes - Accessible to all users */}
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/museums" element={<MuseumsPage />} />
@@ -84,7 +102,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/quiz" element={<QuizPage />} />
 
-          {/* Protected Routes */}
+          {/* Protected Routes - Require authentication */}
           <Route
             path="/profile"
             element={
@@ -142,7 +160,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             }
           />
 
-          {/* Admin Routes */}
+          {/* Admin Routes - Require admin privileges */}
           <Route
             path="/admin/quiz/create"
             element={
@@ -152,7 +170,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             }
           />
 
-          {/* Catch all route */}
+          {/* Catch all route - Redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

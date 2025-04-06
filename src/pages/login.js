@@ -1,8 +1,18 @@
+/**
+ * Login Page Component
+ * Handles user authentication for both visitors and admins
+ * Includes password reset functionality and remember me option
+ */
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSupabase } from '../supabase';
-import { getUserProfile } from '../services/database';
 
+/**
+ * LoginPage Component
+ * Manages user authentication and session handling for both visitors and admins
+ * @returns {JSX.Element} The login page component
+ */
 export function LoginPage() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -10,9 +20,14 @@ export function LoginPage() {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        rememberMe: false
+        rememberMe: false,
+        isAdmin: false
     });
 
+    /**
+     * Handles form input changes
+     * @param {Event} e - The input change event
+     */
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
@@ -21,6 +36,10 @@ export function LoginPage() {
         }));
     };
 
+    /**
+     * Handles password reset request
+     * @param {Event} e - The form submission event
+     */
     const handleForgotPassword = async (e) => {
         e.preventDefault();
         if (!formData.email) {
@@ -45,6 +64,10 @@ export function LoginPage() {
         }
     };
 
+    /**
+     * Handles form submission and user authentication
+     * @param {Event} e - The form submission event
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
@@ -52,37 +75,128 @@ export function LoginPage() {
 
         try {
             const supabase = getSupabase();
+            console.log('Starting login process...');
             
-            // Sign in the user
+            // First try Supabase Auth
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email: formData.email,
-                password: formData.password,
+                password: formData.password
             });
 
-            if (authError) throw authError;
+            if (!authError && authData.user) {
+                console.log('Supabase Auth successful, getting user details...');
+                
+                // Check if user exists in the appropriate table
+                const table = formData.isAdmin ? 'admin' : 'visitor';
+                console.log('Checking credentials in table:', table);
+                
+                const { data: existingUser, error: userError } = await supabase
+                    .from(table)
+                    .select('*')
+                    .eq('email', formData.email)
+                    .single();
 
-            // Get user profile to check role
-            const profile = await getUserProfile(authData.user.id);
-            
-            // Set session persistence based on rememberMe
-            if (formData.rememberMe) {
-                await supabase.auth.setSession({
-                    access_token: authData.session.access_token,
-                    refresh_token: authData.session.refresh_token,
-                });
+                if (userError || !existingUser) {
+                    console.error('User lookup error:', userError);
+                    throw new Error('User not found in the system');
+                }
+
+                // Set session data
+                const sessionData = {
+                    user: {
+                        id: formData.isAdmin ? existingUser.admin_id : existingUser.visitor_id,
+                        email: existingUser.email,
+                        name: existingUser.name,
+                        role: formData.isAdmin ? existingUser.role : 'visitor'
+                    }
+                };
+
+                console.log('Setting session data:', sessionData);
+
+                // Store session based on rememberMe preference
+                if (formData.rememberMe) {
+                    localStorage.setItem('userSession', JSON.stringify(sessionData));
+                    console.log('Session stored in localStorage');
+                } else {
+                    sessionStorage.setItem('userSession', JSON.stringify(sessionData));
+                    console.log('Session stored in sessionStorage');
+                }
+
+                // Redirect based on role
+                const redirectPath = formData.isAdmin ? '/admin/dashboard' : '/dashboard';
+                console.log('Redirecting to:', redirectPath);
+                navigate(redirectPath);
+            } else {
+                // If Supabase Auth fails, try legacy login
+                console.log('Supabase Auth failed, trying legacy login...');
+                
+                const { data: existingUser, error: userError } = await supabase
+                    .from(formData.isAdmin ? 'admin' : 'visitor')
+                    .select('*')
+                    .eq('email', formData.email)
+                    .single();
+
+                if (userError || !existingUser) {
+                    console.error('User lookup error:', userError);
+                    throw new Error('Invalid email or password');
+                }
+
+                // Verify password for legacy users
+                if (existingUser.password !== formData.password) {
+                    console.error('Password mismatch');
+                    throw new Error('Invalid email or password');
+                }
+
+                // Set session data for legacy users
+                const sessionData = {
+                    user: {
+                        id: formData.isAdmin ? existingUser.admin_id : existingUser.visitor_id,
+                        email: existingUser.email,
+                        name: existingUser.name,
+                        role: formData.isAdmin ? existingUser.role : 'visitor'
+                    }
+                };
+
+                if (formData.rememberMe) {
+                    localStorage.setItem('userSession', JSON.stringify(sessionData));
+                } else {
+                    sessionStorage.setItem('userSession', JSON.stringify(sessionData));
+                }
+
+                navigate(formData.isAdmin ? '/admin/dashboard' : '/dashboard');
             }
-
-            // Redirect based on role
-            navigate(profile.is_admin ? '/admin/dashboard' : '/dashboard');
         } catch (error) {
+            console.error('Login error:', error);
             setError(error.message);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleOAuthLogin = async (provider) => {
+        try {
+            const supabase = getSupabase();
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider,
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent'
+                    }
+                }
+            });
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error(`${provider} login error:`, error);
+            setError(error.message);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+            {/* Header Section */}
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
                     Sign in to your account
@@ -95,15 +209,18 @@ export function LoginPage() {
                 </p>
             </div>
 
+            {/* Login Form */}
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
                     <form className="space-y-6" onSubmit={handleSubmit}>
+                        {/* Error Display */}
                         {error && (
                             <div className="rounded-md bg-red-50 p-4">
                                 <div className="text-sm text-red-700">{error}</div>
                             </div>
                         )}
 
+                        {/* Email Input */}
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                 Email address
@@ -122,6 +239,7 @@ export function LoginPage() {
                             </div>
                         </div>
 
+                        {/* Password Input */}
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                 Password
@@ -140,19 +258,35 @@ export function LoginPage() {
                             </div>
                         </div>
 
+                        {/* Login Options */}
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <input
-                                    id="rememberMe"
-                                    name="rememberMe"
-                                    type="checkbox"
-                                    checked={formData.rememberMe}
-                                    onChange={handleChange}
-                                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                                />
-                                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
-                                    Remember me
-                                </label>
+                            <div className="flex items-center space-x-4">
+                                <div className="flex items-center">
+                                    <input
+                                        id="rememberMe"
+                                        name="rememberMe"
+                                        type="checkbox"
+                                        checked={formData.rememberMe}
+                                        onChange={handleChange}
+                                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                    />
+                                    <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <div className="flex items-center">
+                                    <input
+                                        id="isAdmin"
+                                        name="isAdmin"
+                                        type="checkbox"
+                                        checked={formData.isAdmin}
+                                        onChange={handleChange}
+                                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                    />
+                                    <label htmlFor="isAdmin" className="ml-2 block text-sm text-gray-900">
+                                        Login as Admin
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="text-sm">
@@ -161,11 +295,12 @@ export function LoginPage() {
                                     onClick={handleForgotPassword}
                                     className="font-medium text-orange-600 hover:text-orange-500"
                                 >
-                                    Forgot your password?
+                                    Forgot password?
                                 </button>
                             </div>
                         </div>
 
+                        {/* Submit Button */}
                         <div>
                             <button
                                 type="submit"
@@ -175,8 +310,9 @@ export function LoginPage() {
                                 {loading ? 'Signing in...' : 'Sign in'}
                             </button>
                         </div>
-      </form>
+                    </form>
 
+                    {/* OAuth Login Options */}
                     <div className="mt-6">
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
@@ -184,21 +320,15 @@ export function LoginPage() {
                             </div>
                             <div className="relative flex justify-center text-sm">
                                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
-      </div>
-    </div>
+                            </div>
+                        </div>
 
+                        {/* OAuth Buttons */}
                         <div className="mt-6 grid grid-cols-2 gap-3">
+                            {/* Google OAuth */}
                             <button
                                 type="button"
-                                onClick={() => {
-    const supabase = getSupabase();
-                                    supabase.auth.signInWithOAuth({
-                                        provider: 'google',
-                                        options: {
-                                            redirectTo: `${window.location.origin}/auth/callback`
-                                        }
-                                    });
-                                }}
+                                onClick={() => handleOAuthLogin('google')}
                                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                             >
                                 <span className="sr-only">Sign in with Google</span>
@@ -210,17 +340,10 @@ export function LoginPage() {
                                 </svg>
                             </button>
 
+                            {/* GitHub OAuth */}
                             <button
                                 type="button"
-                                onClick={() => {
-                                    const supabase = getSupabase();
-                                    supabase.auth.signInWithOAuth({
-                                        provider: 'github',
-                                        options: {
-                                            redirectTo: `${window.location.origin}/auth/callback`
-                                        }
-                                    });
-                                }}
+                                onClick={() => handleOAuthLogin('github')}
                                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                             >
                                 <span className="sr-only">Sign in with GitHub</span>

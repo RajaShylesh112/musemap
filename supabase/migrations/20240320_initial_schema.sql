@@ -1,117 +1,82 @@
+-- Drop existing tables if they exist (in reverse order of dependencies)
+drop table if exists public.user_points cascade;
+drop table if exists public.user_badges cascade;
+drop table if exists public.quiz_results cascade;
+drop table if exists public.bookings cascade;
+drop table if exists public.museums cascade;
+drop table if exists public.profiles cascade;
+
 -- Enable necessary extensions
 create extension if not exists "uuid-ossp";
 
--- Create users table (extends Supabase auth.users)
-create table public.profiles (
-    id uuid references auth.users on delete cascade primary key,
-    name text,
-    email text,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Create museums table
-create table public.museums (
-    id uuid default uuid_generate_v4() primary key,
+-- Create VISITOR table
+create table public.visitor (
+    visitor_id uuid default uuid_generate_v4() primary key,
     name text not null,
-    description text,
-    location text not null,
-    opening_hours text,
-    ticket_price decimal(10,2),
-    image_url text,
+    email text unique not null,
+    password text not null,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Create bookings table
-create table public.bookings (
-    id uuid default uuid_generate_v4() primary key,
-    user_id uuid references public.profiles(id) on delete cascade not null,
-    museum_id uuid references public.museums(id) on delete cascade not null,
+-- Create ADMIN table
+create table public.admin (
+    admin_id uuid default uuid_generate_v4() primary key,
+    name text not null,
+    email text unique not null,
+    role text not null,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Create TICKET table
+create table public.ticket (
+    ticket_id uuid default uuid_generate_v4() primary key,
+    visitor_id uuid references public.visitor(visitor_id) on delete cascade not null,
     date date not null,
     time time not null,
-    number_of_tickets integer not null,
-    total_amount decimal(10,2) not null,
-    status text not null default 'pending',
+    payment_status text not null default 'pending',
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Create quiz_results table
-create table public.quiz_results (
-    id uuid default uuid_generate_v4() primary key,
-    user_id uuid references public.profiles(id) on delete cascade not null,
-    quiz_id uuid not null,
-    score decimal(5,2) not null,
-    completed_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Create CHATBOT table
+create table public.chatbot (
+    chatbot_id uuid default uuid_generate_v4() primary key,
+    visitor_id uuid references public.visitor(visitor_id) on delete cascade not null,
+    query text not null,
+    response text not null,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Create user_badges table
-create table public.user_badges (
-    id uuid default uuid_generate_v4() primary key,
-    user_id uuid references public.profiles(id) on delete cascade not null,
-    badge_type text not null,
-    badge_level text not null,
-    awarded_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Create user_points table
-create table public.user_points (
-    user_id uuid references public.profiles(id) on delete cascade primary key,
-    points integer not null default 0,
+-- Create QUIZ table
+create table public.quiz (
+    quiz_id uuid default uuid_generate_v4() primary key,
+    title text not null,
+    description text,
+    admin_id uuid references public.admin(admin_id) on delete cascade not null,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Create RLS policies
-alter table public.profiles enable row level security;
-alter table public.museums enable row level security;
-alter table public.bookings enable row level security;
-alter table public.quiz_results enable row level security;
-alter table public.user_badges enable row level security;
-alter table public.user_points enable row level security;
+-- Create REWARD table
+create table public.reward (
+    reward_id uuid default uuid_generate_v4() primary key,
+    name text not null,
+    criteria text not null,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
--- Profiles policies
-create policy "Users can view their own profile"
-    on public.profiles for select
-    using (auth.uid() = id);
-
-create policy "Users can update their own profile"
-    on public.profiles for update
-    using (auth.uid() = id);
-
--- Museums policies
-create policy "Anyone can view museums"
-    on public.museums for select
-    using (true);
-
--- Bookings policies
-create policy "Users can view their own bookings"
-    on public.bookings for select
-    using (auth.uid() = user_id);
-
-create policy "Users can create bookings"
-    on public.bookings for insert
-    with check (auth.uid() = user_id);
-
--- Quiz results policies
-create policy "Users can view their own quiz results"
-    on public.quiz_results for select
-    using (auth.uid() = user_id);
-
-create policy "Users can insert their own quiz results"
-    on public.quiz_results for insert
-    with check (auth.uid() = user_id);
-
--- User badges policies
-create policy "Users can view their own badges"
-    on public.user_badges for select
-    using (auth.uid() = user_id);
-
--- User points policies
-create policy "Users can view their own points"
-    on public.user_points for select
-    using (auth.uid() = user_id);
+-- Create MUSEUM_LISTING table
+create table public.museum_listing (
+    listing_id uuid default uuid_generate_v4() primary key,
+    name text not null,
+    description text,
+    admin_id uuid references public.admin(admin_id) on delete cascade not null,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
 -- Create functions for updating timestamps
 create or replace function public.handle_updated_at()
@@ -123,22 +88,82 @@ end;
 $$ language plpgsql;
 
 -- Create triggers for updating timestamps
-create trigger handle_profiles_updated_at
-    before update on public.profiles
+create trigger handle_visitor_updated_at
+    before update on public.visitor
     for each row
     execute function public.handle_updated_at();
 
-create trigger handle_museums_updated_at
-    before update on public.museums
+create trigger handle_admin_updated_at
+    before update on public.admin
     for each row
     execute function public.handle_updated_at();
 
-create trigger handle_bookings_updated_at
-    before update on public.bookings
+create trigger handle_ticket_updated_at
+    before update on public.ticket
     for each row
     execute function public.handle_updated_at();
 
-create trigger handle_user_points_updated_at
-    before update on public.user_points
+create trigger handle_quiz_updated_at
+    before update on public.quiz
     for each row
-    execute function public.handle_updated_at(); 
+    execute function public.handle_updated_at();
+
+create trigger handle_museum_listing_updated_at
+    before update on public.museum_listing
+    for each row
+    execute function public.handle_updated_at();
+
+-- Enable RLS on all tables
+alter table public.visitor enable row level security;
+alter table public.admin enable row level security;
+alter table public.ticket enable row level security;
+alter table public.chatbot enable row level security;
+alter table public.quiz enable row level security;
+alter table public.reward enable row level security;
+alter table public.museum_listing enable row level security;
+
+-- Drop existing policies if they exist
+drop policy if exists "Anyone can register as a visitor" on public.visitor;
+drop policy if exists "Users can view their own visitor profile" on public.visitor;
+drop policy if exists "Users can update their own visitor profile" on public.visitor;
+drop policy if exists "Anyone can register as an admin" on public.admin;
+drop policy if exists "Admins can view their own profile" on public.admin;
+drop policy if exists "Admins can update their own profile" on public.admin;
+
+-- Create new policies that work with our custom auth
+create policy "Enable all operations for visitors"
+    on public.visitor
+    for all
+    using (true)
+    with check (true);
+
+create policy "Enable all operations for admins"
+    on public.admin
+    for all
+    using (true)
+    with check (true);
+
+-- Update other table policies to use simpler checks
+create policy "Enable all ticket operations"
+    on public.ticket
+    for all
+    using (true)
+    with check (true);
+
+create policy "Enable all chatbot operations"
+    on public.chatbot
+    for all
+    using (true)
+    with check (true);
+
+create policy "Enable all quiz operations"
+    on public.quiz
+    for all
+    using (true)
+    with check (true);
+
+create policy "Enable all museum listing operations"
+    on public.museum_listing
+    for all
+    using (true)
+    with check (true); 
