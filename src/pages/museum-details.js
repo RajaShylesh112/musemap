@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getSupabase } from '../supabase';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function MuseumDetailsPage() {
     const [activeTab, setActiveTab] = useState('about');
@@ -9,7 +9,6 @@ export function MuseumDetailsPage() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const { id } = useParams();
-    const supabase = getSupabase();
 
     useEffect(() => {
         fetchMuseumData();
@@ -18,136 +17,23 @@ export function MuseumDetailsPage() {
     const fetchMuseumData = async () => {
         try {
             setLoading(true);
-            
-            // In a real app, you would fetch from your database
-            // For now, we'll use mock data based on the ID
-            const mockMuseums = {
-                1: {
-                    id: 1,
-                    name: "National Museum, New Delhi",
-                    location: "Janpath, New Delhi, India",
-                    description: "The National Museum, New Delhi is one of the largest museums in India. Established in 1949, it holds a variety of articles ranging from pre-historic era to modern works of art. It functions under the Ministry of Culture, Government of India.",
-                    openingHours: {
-                        monday: "10:00 AM - 6:00 PM",
-                        tuesday: "10:00 AM - 6:00 PM",
-                        wednesday: "10:00 AM - 6:00 PM",
-                        thursday: "10:00 AM - 6:00 PM",
-                        friday: "10:00 AM - 6:00 PM",
-                        saturday: "10:00 AM - 8:00 PM",
-                        sunday: "10:00 AM - 6:00 PM"
-                    },
-                    exhibits: [
-                        {
-                            name: "Ancient Civilizations",
-                            description: "Explore artifacts from ancient India, including Indus Valley Civilization",
-                            duration: "1-2 hours"
-                        },
-                        {
-                            name: "Medieval Period",
-                            description: "Art and artifacts from the medieval period of Indian history",
-                            duration: "1 hour"
-                        },
-                        {
-                            name: "Modern Art Gallery",
-                            description: "Contemporary Indian art from the 20th century",
-                            duration: "30-45 minutes"
-                        }
-                    ],
-                    facilities: [
-                        "Café",
-                        "Gift Shop",
-                        "Wheelchair Access",
-                        "Audio Guide",
-                        "Guided Tours"
-                    ]
-                },
-                2: {
-                    id: 2,
-                    name: "Indian Museum, Kolkata",
-                    location: "Park Street, Kolkata, India",
-                    description: "The Indian Museum in Kolkata is the oldest and largest museum in India. Founded in 1814, it has rare collections of antiques, armor and ornaments, fossils, skeletons, mummies, and Mughal paintings.",
-                    openingHours: {
-                        monday: "10:00 AM - 5:00 PM",
-                        tuesday: "10:00 AM - 5:00 PM",
-                        wednesday: "10:00 AM - 5:00 PM",
-                        thursday: "10:00 AM - 5:00 PM",
-                        friday: "10:00 AM - 5:00 PM",
-                        saturday: "10:00 AM - 5:00 PM",
-                        sunday: "Closed"
-                    },
-                    exhibits: [
-                        {
-                            name: "Archaeology Gallery",
-                            description: "Ancient artifacts and archaeological findings",
-                            duration: "1-2 hours"
-                        },
-                        {
-                            name: "Natural History",
-                            description: "Fossils and specimens from prehistoric times",
-                            duration: "1 hour"
-                        },
-                        {
-                            name: "Art Gallery",
-                            description: "Paintings and sculptures from various periods",
-                            duration: "45 minutes"
-                        }
-                    ],
-                    facilities: [
-                        "Library",
-                        "Research Center",
-                        "Wheelchair Access",
-                        "Guided Tours",
-                        "Photography Allowed"
-                    ]
-                },
-                3: {
-                    id: 3,
-                    name: "Chhatrapati Shivaji Maharaj Vastu Sangrahalaya, Mumbai",
-                    location: "Fort, Mumbai, India",
-                    description: "Formerly known as the Prince of Wales Museum, this museum was founded in the early 20th century. It houses approximately 50,000 exhibits of ancient Indian history as well as objects from foreign lands.",
-                    openingHours: {
-                        monday: "10:15 AM - 6:00 PM",
-                        tuesday: "10:15 AM - 6:00 PM",
-                        wednesday: "10:15 AM - 6:00 PM",
-                        thursday: "10:15 AM - 6:00 PM",
-                        friday: "10:15 AM - 6:00 PM",
-                        saturday: "10:15 AM - 6:00 PM",
-                        sunday: "Closed"
-                    },
-                    exhibits: [
-                        {
-                            name: "Indian Miniature Paintings",
-                            description: "Collection of miniature paintings from various schools",
-                            duration: "1 hour"
-                        },
-                        {
-                            name: "Natural History Section",
-                            description: "Exhibits showcasing India's biodiversity",
-                            duration: "45 minutes"
-                        },
-                        {
-                            name: "Arms and Armour",
-                            description: "Historical weapons and armor from different periods",
-                            duration: "30 minutes"
-                        }
-                    ],
-                    facilities: [
-                        "Cafeteria",
-                        "Book Shop",
-                        "Wheelchair Access",
-                        "Audio Guide",
-                        "Photography Allowed"
-                    ]
-                }
-            };
+            const { data: museum, error } = await supabase
+                .from('museums')
+                .select('*')
+                .eq('id', id)
+                .single();
 
-            // Simulate API call delay
-            setTimeout(() => {
-                const museum = mockMuseums[id] || mockMuseums[1]; // Default to first museum if ID not found
-                setMuseumData(museum);
-                setLoading(false);
-            }, 500);
+            if (error) throw error;
 
+            if (museum) {
+                setMuseumData({
+                    ...museum,
+                    openingHours: museum.opening_hours,
+                    exhibits: museum.exhibits || [],
+                    facilities: museum.facilities || []
+                });
+            }
+            setLoading(false);
         } catch (error) {
             console.error('Error fetching museum data:', error);
             setError('Failed to load museum information. Please try again later.');
@@ -169,13 +55,13 @@ export function MuseumDetailsPage() {
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-gray-800 mb-4">Error</h2>
                     <p className="text-gray-600 mb-4">{error}</p>
-                    <button 
+                    <button
                         onClick={() => navigate('/museums')}
                         className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
                     >
                         Back to Museums
                     </button>
-            </div>
+                </div>
             </div>
         );
     }
@@ -185,7 +71,7 @@ export function MuseumDetailsPage() {
             <div className="header mb-8">
                 <h1 className="text-4xl font-bold mb-2">{museumData.name}</h1>
                 <p className="text-gray-600">{museumData.location}</p>
-          </div>
+            </div>
 
             <div className="tabs mb-6">
                 <div className="flex space-x-4 border-b">
@@ -193,7 +79,7 @@ export function MuseumDetailsPage() {
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`px-4 py-2 capitalize ${
+                            className={`px-4 py-2 capitalize hover:scale-105 transition-transform ${ // Hover effect
                                 activeTab === tab
                                     ? 'border-b-2 border-orange-500 text-orange-500'
                                     : 'text-gray-600 hover:text-orange-500'
@@ -202,17 +88,20 @@ export function MuseumDetailsPage() {
                             {tab}
                         </button>
                     ))}
-          </div>
-        </div>
+                </div>
+            </div>
 
             <div className="content">
                 {activeTab === 'about' && (
                     <div className="space-y-4">
                         <p className="text-gray-700">{museumData.description}</p>
-                        <button 
-                            className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                        <button
+                            className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors flex items-center" // Added flex and items-center
                             onClick={() => navigate('/booking')}
                         >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm2-1a1 1 0 00-1 1v2a1 1 0 001 1h12a1 1 0 001-1V5a1 1 0 00-1-1H4zM2 11a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2zm2-1a1 1 0 00-1 1v2a1 1 0 001 1h12a1 1 0 001-1v-2a1 1 0 00-1-1H4z" clipRule="evenodd" />
+                            </svg>
                             Book Tickets
                         </button>
                     </div>
@@ -249,9 +138,9 @@ export function MuseumDetailsPage() {
                                 <span>{hours}</span>
                             </div>
                         ))}
-        </div>
+                    </div>
                 )}
-      </div>
-    </div>
+            </div>
+        </div>
     );
 }

@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import museumImg1 from '../assets/images/museum-img1.jpg';
 import museumImg2 from '../assets/images/museum-img2.jpg';
 import museumImg3 from '../assets/images/museum-img3.jpg';
 
 export function MuseumsPage() {
+    const [museums, setMuseums] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({
         location: '',
@@ -11,29 +15,24 @@ export function MuseumsPage() {
         hours: ''
     });
 
-    const museums = [
-        {
-            id: 1,
-            name: "National Museum, New Delhi",
-            description: "Explore India's rich cultural heritage with artifacts spanning thousands of years.",
-            image: museumImg2,
-            location: "Delhi"
-        },
-        {
-            id: 2,
-            name: "Indian Museum, Kolkata",
-            description: "The oldest and largest museum in India, showcasing rare antiques and fossils.",
-            image: museumImg3,
-            location: "Kolkata"
-        },
-        {
-            id: 3,
-            name: "Chhatrapati Shivaji Maharaj Vastu Sangrahalaya, Mumbai",
-            description: "A grand museum featuring art, archaeology, and natural history exhibits.",
-            image: museumImg2,
-            location: "Mumbai"
+    useEffect(() => {
+        fetchMuseums();
+    }, []);
+
+    const fetchMuseums = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('museums')
+                .select('*');
+
+            if (error) throw error;
+            setMuseums(data);
+        } catch (error) {
+            console.error('Error fetching museums:', error);
+        } finally {
+            setLoading(false);
         }
-    ];
+    };
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -45,10 +44,27 @@ export function MuseumsPage() {
 
     const filteredMuseums = museums.filter(museum => {
         const matchesSearch = museum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            museum.description.toLowerCase().includes(searchQuery.toLowerCase());
+            museum.description.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesLocation = !filters.location || museum.location === filters.location;
         return matchesSearch && matchesLocation;
     });
+
+    const getImage = (museumName, imageUrl) => {
+        if (imageUrl) {
+            return imageUrl;
+        }
+
+        switch (museumName) {
+            case "National Museum, New Delhi":
+                return museumImg1;
+            case "Indian Museum, Kolkata":
+                return museumImg2;
+            case "Chhatrapati Shivaji Maharaj Vastu Sangrahalaya, Mumbai":
+                return museumImg3;
+            default:
+                return museumImg2; // Default image if no match
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
@@ -100,29 +116,38 @@ export function MuseumsPage() {
                 </div>
 
                 {/* Museum Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredMuseums.map(museum => (
-                        <div key={museum.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                            <img 
-                                src={museum.image} 
-                                alt={museum.name}
-                                className="w-full h-48 object-cover"
-                            />
-                            <div className="p-6">
-                                <h3 className="text-xl font-bold mb-2">{museum.name}</h3>
-                                <p className="text-gray-600 mb-4">{museum.description}</p>
-                                <Link 
-                                    to={`/museums/${museum.id}`}
-                                    className="text-orange-500 hover:text-orange-600 font-medium"
-                                >
-                                    View Details
-                                </Link>
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {filteredMuseums.map(museum => (
+                            <div key={museum.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                                <img
+                                    src={getImage(museum.name, museum.image_url)}
+                                    alt={museum.name}
+                                    className="w-full h-48 object-cover"
+                                />
+                                <div className="p-6">
+                                    <h3 className="text-xl font-bold mb-2">{museum.name}</h3>
+                                    <p className="text-gray-600 mb-4">{museum.description}</p>
+                                    <div className="flex justify-between items-center">
+                                        <Link
+                                            to={`/museums/${museum.id}`}
+                                            className="text-orange-500 hover:text-orange-600 font-medium"
+                                        >
+                                            View Details
+                                        </Link>
+                                        <span className="text-gray-500">₹{museum.ticket_price}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
 
-                {filteredMuseums.length === 0 && (
+                {filteredMuseums.length === 0 && !loading && (
                     <div className="text-center py-12">
                         <p className="text-gray-600">No museums found matching your criteria.</p>
                     </div>

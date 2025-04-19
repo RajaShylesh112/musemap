@@ -37,9 +37,9 @@ export function Navigation() {
                     </div>
 
                     <div className="flex items-center space-x-6">
-                        <Link to="/" className="text-gray-700 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Home</Link>
+                        <Link to="/" className="hover:underline hover:text-orange-500">Home</Link>
                         <Link to="/chatbot" className="text-gray-700 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Chatbot</Link>
-                        <Link to="/museums" className="text-gray-700 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Museums</Link>
+                        <Link to="/museums" className="hover:underline hover:text-orange-500">Museums</Link>
                         <Link to="/quiz" className="text-gray-700 hover:text-orange-500 px-3 py-2 rounded-md text-sm font-medium">Quiz</Link>
                         {isLoggedIn ? (
                             <>
@@ -82,4 +82,4 @@ export function Navigation() {
             </div>
         </nav>
     );
-} 
+}
