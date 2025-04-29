@@ -131,15 +131,20 @@ export function MuseumsPage() {
                                 />
                                 <div className="p-6">
                                     <h3 className="text-xl font-bold mb-2">{museum.name}</h3>
-                                    <p className="text-gray-600 mb-4">{museum.description}</p>
-                                    <div className="flex justify-between items-center">
+                                    <p className="text-gray-600 mb-4 line-clamp-3">{museum.description}</p> {/* Added line-clamp for consistency */}
+                                    <div className="flex justify-between items-center mt-4"> {/* Added margin-top */}
                                         <Link
                                             to={`/museums/${museum.id}`}
                                             className="text-orange-500 hover:text-orange-600 font-medium"
                                         >
                                             View Details
                                         </Link>
-                                        <span className="text-gray-500">₹{museum.ticket_price}</span>
+                                        {/* Display a specific price, e.g., Indian Nationals, or a placeholder */}
+                                        <span className="text-gray-500">
+                                            {museum.ticket_price && typeof museum.ticket_price === 'object' && museum.ticket_price.indian_nationals !== undefined
+                                                ? `From ₹${museum.ticket_price.indian_nationals}`
+                                                : 'Price Varies'} {/* Fallback text */}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
