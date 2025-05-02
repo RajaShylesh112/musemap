@@ -47,7 +47,6 @@ export function QuizPage() {
     };
 
     const fetchQuiz = async (museumId) => {
-        // Define the mockQuiz object once
         const mockQuiz = {
             id: 'mock-id',
             museum_id: museumId,
@@ -108,47 +107,39 @@ export function QuizPage() {
 
             if (!res.ok) {
                 console.error('Fetch failed:', res.status, res.statusText);
-                // Handle 401 error specifically
                 if (res.status === 401) {
                     console.error('401 Error: Unauthorized. Check your anon key and RLS policies.');
-                    // Optionally, redirect to login or display an error message to the user
                 } else if (res.status === 406) {
                     console.error('406 Error: Not Acceptable. Check your Accept header and Supabase configuration.');
                 }
-                // Fallback to mock data on error
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
-                return; // Important: Exit the function after setting mock data
+                return;
             }
 
             const data = await res.json();
             console.log('Fetch data:', data);
 
-            // Robust data validation
             if (!Array.isArray(data) || data.length === 0) {
                 console.error('Quiz data is not an array or is empty.');
-                // Fallback to mock data on error
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
             }
 
-            const quiz = data[0]; // Get the first element
+            const quiz = data[0];
 
             if (!quiz || typeof quiz !== 'object' || quiz === null) {
                 console.error('Quiz data is not an object or is null.');
-                // Fallback to mock data on error
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
             }
 
-            // Extract the questions array from the nested structure
             if (quiz.questions && typeof quiz.questions === 'object' && quiz.questions !== null && quiz.questions.questions && Array.isArray(quiz.questions.questions)) {
-                quiz.questions = quiz.questions.questions; // Extract the inner questions array
+                quiz.questions = quiz.questions.questions;
             } else {
                 console.error('Quiz data is missing valid questions array');
-                // Fallback to mock data on error
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
@@ -156,7 +147,6 @@ export function QuizPage() {
 
             if (!Array.isArray(quiz.questions) || quiz.questions.length === 0) {
                 console.error('Quiz data is missing valid questions array');
-                // Fallback to mock data on error
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
@@ -167,7 +157,6 @@ export function QuizPage() {
 
         } catch (error) {
             console.error('Error fetching quiz:', error);
-            // Fallback to mock data on error
             setQuizData(mockQuiz);
             setQuizLoading(false);
         }
@@ -205,53 +194,96 @@ export function QuizPage() {
         });
 
         let finalScore = (correctAnswers / quizData.questions.length) * 100;
-        finalScore = parseFloat(finalScore.toFixed(2)); // Round to two decimal places
+        finalScore = parseFloat(finalScore.toFixed(2));
         setScore(finalScore);
         setShowResults(true);
 
-        // Save quiz results
         saveQuizResults(finalScore);
     };
 
     const saveQuizResults = async (finalScore) => {
-        if (!quizData) return;
-        
+        if (!quizData || !quizData.id) {
+            console.error("Cannot save results: Quiz data or ID is missing.");
+            return;
+        }
+
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            
+
             if (user) {
+                const resultData = {
+                    user_id: user.id,
+                    quiz_id: quizData.id,
+                    score: finalScore,
+                    completed_at: new Date()
+                };
+
+                console.log("Attempting to save quiz result:", resultData);
+
                 const { error } = await supabase
                     .from('quiz_results')
-                    .insert([
-                        {
-                            user_id: user.id,
-                            quiz_id: quizData.id,
-                            museum_id: selectedMuseum,
-                            score: finalScore,
-                            completed_at: new Date()
-                        }
-                    ]);
+                    .insert([resultData]);
 
-                if (error) throw error;
-
-                // Award badges based on score
-                if (finalScore >= quizData.rewards.gold) {
-                    awardBadge('gold');
-                } else if (finalScore >= quizData.rewards.silver) {
-                    awardBadge('silver');
-                } else if (finalScore >= quizData.rewards.bronze) {
-                    awardBadge('bronze');
+                if (error) {
+                    console.error('Supabase error saving quiz results:', error.message, error.details);
+                } else {
+                    console.log("Quiz result saved successfully.");
                 }
+
+                if (quizData.rewards) {
+                    if (finalScore >= quizData.rewards.gold) {
+                        awardBadge('gold');
+                    } else if (finalScore >= quizData.rewards.silver) {
+                        awardBadge('silver');
+                    } else if (finalScore >= quizData.rewards.bronze) {
+                        awardBadge('bronze');
+                    }
+                } else {
+                    console.warn("Quiz data is missing reward thresholds. Cannot award badges.");
+                }
+
+                let pointsToAdd = 0;
+                if (finalScore >= 90) {
+                    pointsToAdd = 100;
+                } else if (finalScore >= 80) {
+                    pointsToAdd = 60;
+                } else if (finalScore >= 60) {
+                    pointsToAdd = 30;
+                }
+
+                if (pointsToAdd > 0) {
+                    console.log(`Attempting to add ${pointsToAdd} points for user ${user.id}`);
+
+                    const { error: rpcError } = await supabase.rpc('increment_user_points', {
+                        auth_user_id: user.id,
+                        points_to_add: pointsToAdd
+                    });
+
+                    if (rpcError) {
+                        console.error('Supabase RPC error incrementing points:', rpcError.message);
+                    } else {
+                        console.log(`${pointsToAdd} points added successfully.`);
+                    }
+                } else {
+                    console.log("No points awarded for this score.");
+                }
+
+            } else {
+                console.log("User not logged in. Cannot save quiz results.");
             }
         } catch (error) {
-            console.error('Error saving quiz results:', error);
+            console.error('Error in saveQuizResults function:', error);
         }
     };
 
     const awardBadge = async (level) => {
+        if (!selectedMuseum) {
+            console.error("Cannot award badge: Museum ID is missing.");
+            return;
+        }
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            
+
             if (user) {
                 const { error } = await supabase
                     .from('user_badges')
@@ -265,7 +297,11 @@ export function QuizPage() {
                         }
                     ]);
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Supabase error awarding badge:', error.message);
+                    throw error;
+                };
+                console.log(`Badge awarded: ${level}`);
             }
         } catch (error) {
             console.error('Error awarding badge:', error);
@@ -296,7 +332,6 @@ export function QuizPage() {
         );
     }
 
-    // Museum Selection Screen
     if (!selectedMuseum) {
         const museumOptions = museums.map(museum => ({
             value: museum.id,
@@ -333,7 +368,6 @@ export function QuizPage() {
         );
     }
 
-    // Quiz Loading Screen
     if (quizLoading || !quizData) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -345,7 +379,6 @@ export function QuizPage() {
         );
     }
 
-    // Results Screen
     if (showResults) {
         return (
             <div className="min-h-screen bg-gray-50 py-12">
@@ -359,7 +392,6 @@ export function QuizPage() {
                             </p>
                         </div>
 
-                        {/* Badge Award */}
                         {score >= quizData.rewards.bronze && (
                             <div className="mb-8">
                                 <div className="w-20 h-20 mx-auto mb-4">
@@ -415,7 +447,6 @@ export function QuizPage() {
         );
     }
 
-    // Make sure quizData has questions before trying to render the quiz
     if (!quizData || !quizData.questions || quizData.questions.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -433,10 +464,8 @@ export function QuizPage() {
         );
     }
 
-    // Quiz Questions Screen - Now with extra safety checks
     const currentQuestionData = quizData.questions[currentQuestion];
-    
-    // Extra safety check before rendering the question
+
     if (!currentQuestionData) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -458,12 +487,10 @@ export function QuizPage() {
         <div className="min-h-screen bg-gray-50 py-12">
             <div className="max-w-3xl mx-auto px-4">
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                    {/* Header with Quiz Title */}
                     <div className="bg-orange-500 text-white p-4">
                         <h1 className="text-xl font-bold">{quizData.title}</h1>
                     </div>
                     
-                    {/* Progress Bar */}
                     <div className="h-2 bg-gray-200">
                         <div 
                             className="h-full bg-orange-500 transition-all duration-300"
@@ -472,7 +499,6 @@ export function QuizPage() {
                     </div>
 
                     <div className="p-8">
-                        {/* Question Counter */}
                         <div className="flex justify-between items-center mb-8">
                             <span className="text-sm text-gray-500">
                                 Question {currentQuestion + 1} of {quizData.questions.length}
@@ -482,12 +508,10 @@ export function QuizPage() {
                             </span>
                         </div>
 
-                        {/* Question */}
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">
                             {currentQuestionData.question}
                         </h2>
 
-                        {/* Options */}
                         <div className="space-y-4 mb-8">
                             {currentQuestionData.options && currentQuestionData.options.map((option, index) => (
                                 <button
@@ -515,7 +539,6 @@ export function QuizPage() {
                             ))}
                         </div>
 
-                        {/* Navigation Buttons */}
                         <div className="flex justify-between">
                             <button
                                 onClick={handlePrevious}

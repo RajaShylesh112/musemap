@@ -1,77 +1,194 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getSupabase } from '../supabase';
+import { supabase } from '../lib/supabase'; // Assuming supabase is initialized here
+
+// Define reward levels and thresholds locally for this component's display logic
+const POINT_LEVELS = {
+    NONE: { name: 'None', threshold: 0, nextThreshold: 250, color: 'bg-gray-300' },
+    BRONZE: { name: 'Bronze', threshold: 250, nextThreshold: 500, color: 'bg-yellow-600' },
+    SILVER: { name: 'Silver', threshold: 500, nextThreshold: 1000, color: 'bg-gray-400' },
+    GOLD: { name: 'Gold', threshold: 1000, nextThreshold: null, color: 'bg-yellow-400' },
+};
+const MAX_POINTS_DISPLAY = POINT_LEVELS.GOLD.threshold; // For progress bar calculation
+
+// Helper to get current tier based on points
+const getCurrentTier = (points) => {
+    if (points >= POINT_LEVELS.GOLD.threshold) return POINT_LEVELS.GOLD;
+    if (points >= POINT_LEVELS.SILVER.threshold) return POINT_LEVELS.SILVER;
+    if (points >= POINT_LEVELS.BRONZE.threshold) return POINT_LEVELS.BRONZE;
+    return POINT_LEVELS.NONE;
+};
 
 export function RewardCriteriaPage() {
     const [userStats, setUserStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const supabase = getSupabase();
+    const [isRedeeming, setIsRedeeming] = useState(false); // State for redemption loading
+    const [redeemError, setRedeemError] = useState(null); // State for redemption errors
+    const [redeemSuccess, setRedeemSuccess] = useState(null); // State for success message
 
     useEffect(() => {
         fetchUserStats();
     }, []);
 
+    // --- Point Calculation Logic ---
+    const calculatePoints = (quizResults, visitCount) => {
+        let quizPoints = 0;
+        quizResults.forEach(result => {
+            const score = result.score || 0;
+            if (score >= 90) {
+                quizPoints += 100;
+            } else if (score >= 80) {
+                quizPoints += 60;
+            } else if (score >= 60) {
+                quizPoints += 30;
+            }
+        });
+
+        let visitPoints = 0;
+        if (visitCount >= 20) {
+            visitPoints = 200;
+        } else if (visitCount >= 10) {
+            visitPoints = 100;
+        } else if (visitCount >= 5) {
+            visitPoints = 50;
+        }
+
+        return quizPoints + visitPoints;
+    };
+    // --- End Point Calculation Logic ---
+
     const fetchUserStats = async () => {
+        setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            
-            if (user) {
-                // In a real app, this would fetch from your database
-                // For now, we'll use mock data
-                const mockStats = {
-                    totalVisits: 5,
-                    quizzesTaken: 3,
-                    averageQuizScore: 85,
-                    badges: [
-                        {
-                            type: 'quiz',
-                            level: 'silver',
-                            awarded_at: '2024-03-15'
-                        },
-                        {
-                            type: 'visits',
-                            level: 'bronze',
-                            awarded_at: '2024-03-10'
-                        }
-                    ],
-                    points: 250
-                };
 
-                setUserStats(mockStats);
+            if (user) {
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('points')
+                    // Use the correct foreign key column 'user_id'
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (profileError) throw profileError;
+                // Handle case where profile might not exist yet for a new user
+                if (!profile) {
+                    console.warn("User profile not found. Points might be 0 or profile needs creation.");
+                    // Decide how to handle - maybe set points to 0?
+                    setUserStats(prev => ({ ...prev, points: 0 }));
+                    // Or throw an error if profile is mandatory
+                    // throw new Error("User profile not found.");
+                } else {
+                    // Existing logic to set userStats using profile.points
+                    const { data: quizResults, error: quizError } = await supabase
+                        .from('quiz_results')
+                        .select('score')
+                        .eq('user_id', user.id);
+                    if (quizError) throw quizError;
+
+                    const { count: visitCount, error: visitError } = await supabase
+                        .from('bookings')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', user.id)
+                        .eq('status', 'Confirmed');
+                    if (visitError) throw visitError;
+
+                    const totalScore = quizResults.reduce((sum, result) => sum + (result.score || 0), 0);
+                    const averageQuizScore = quizResults.length > 0 ? Math.round(totalScore / quizResults.length) : 0;
+
+                    setUserStats({
+                        totalVisits: visitCount || 0,
+                        quizzesTaken: quizResults.length,
+                        averageQuizScore: averageQuizScore,
+                        points: profile.points || 0, // Use points from profile
+                    });
+                }
+            } else {
+                setUserStats(null);
             }
-            setLoading(false);
         } catch (error) {
             console.error('Error fetching user stats:', error);
+            setUserStats(null);
+        } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRedeemReward = async (reward) => {
+        if (!userStats || isRedeeming) return; // Prevent multiple clicks or if not logged in
+
+        setIsRedeeming(true);
+        setRedeemError(null);
+        setRedeemSuccess(null);
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("User not authenticated.");
+
+            const currentPoints = userStats.points;
+            const cost = reward.points;
+
+            if (currentPoints < cost) {
+                throw new Error("Insufficient points to redeem this reward.");
+            }
+
+            const newPoints = currentPoints - cost;
+
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ points: newPoints })
+                .eq('user_id', user.id); // Use 'user_id' to match the profile record
+
+            if (updateError) throw updateError;
+
+            setUserStats(prevStats => ({
+                ...prevStats,
+                points: newPoints
+            }));
+
+            setRedeemSuccess(`Successfully redeemed "${reward.name}"!`);
+
+        } catch (error) {
+            console.error('Error redeeming reward:', error);
+            setRedeemError(error.message || 'Failed to redeem reward. Please try again.');
+        } finally {
+            setIsRedeeming(false);
+            setTimeout(() => {
+                setRedeemError(null);
+                setRedeemSuccess(null);
+            }, 5000);
         }
     };
 
     const criteria = {
         visits: {
-            bronze: { count: 5, points: 50 },
-            silver: { count: 10, points: 100 },
-            gold: { count: 20, points: 200 }
+            level1: { count: 5, points: 50 },
+            level2: { count: 10, points: 100 },
+            level3: { count: 20, points: 200 }
         },
         quizzes: {
-            bronze: { score: 60, points: 30 },
-            silver: { score: 80, points: 60 },
-            gold: { score: 90, points: 100 }
+            level1: { score: 60, points: 30 },
+            level2: { score: 80, points: 60 },
+            level3: { score: 90, points: 100 }
         },
         rewards: [
             {
+                id: 'audio_guide',
                 name: "Free Audio Guide",
                 points: 100,
-                description: "Get a free audio guide on your next visit"
+                description: "Enhance your next museum visit with a complimentary audio guide."
             },
             {
-                name: "Guided Tour",
+                id: 'discount_10',
+                name: "10% Discount",
                 points: 200,
-                description: "Enjoy a free guided tour of any museum"
+                description: "Get 10% off your next ticket or gift shop purchase."
             },
             {
-                name: "Annual Pass",
+                id: 'free_ticket',
+                name: "Free Ticket",
                 points: 500,
-                description: "Get unlimited access to all museums for a year"
+                description: "Enjoy a free entry ticket to a museum of your choice."
             }
         ]
     };
@@ -84,144 +201,163 @@ export function RewardCriteriaPage() {
         );
     }
 
+    const currentPoints = userStats?.points ?? 0;
+    const currentTier = getCurrentTier(currentPoints);
+    const progressPercent = Math.min((currentPoints / MAX_POINTS_DISPLAY) * 100, 100);
+
     return (
-        <div className="min-h-screen bg-gray-50 py-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* User Stats */}
-                {userStats && (
+        <div className="min-h-screen bg-gray-100 py-12">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+                {userStats ? (
                     <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Progress</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div className="bg-orange-50 rounded-lg p-4">
-                                <div className="text-orange-500 text-sm font-medium">Total Visits</div>
-                                <div className="text-2xl font-bold">{userStats.totalVisits}</div>
+                        <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Your Progress</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+                            <div className="bg-orange-50 rounded-lg p-4 text-center">
+                                <div className="text-sm font-medium text-orange-600 mb-1">Total Visits</div>
+                                <div className="text-3xl font-bold text-gray-900">{userStats.totalVisits}</div>
                             </div>
-                            <div className="bg-orange-50 rounded-lg p-4">
-                                <div className="text-orange-500 text-sm font-medium">Quizzes Taken</div>
-                                <div className="text-2xl font-bold">{userStats.quizzesTaken}</div>
+                            <div className="bg-blue-50 rounded-lg p-4 text-center">
+                                <div className="text-sm font-medium text-blue-600 mb-1">Quizzes Taken</div>
+                                <div className="text-3xl font-bold text-gray-900">{userStats.quizzesTaken}</div>
                             </div>
-                            <div className="bg-orange-50 rounded-lg p-4">
-                                <div className="text-orange-500 text-sm font-medium">Average Quiz Score</div>
-                                <div className="text-2xl font-bold">{userStats.averageQuizScore}%</div>
+                            <div className="bg-green-50 rounded-lg p-4 text-center">
+                                <div className="text-sm font-medium text-green-600 mb-1">Average Score</div>
+                                <div className="text-3xl font-bold text-gray-900">{userStats.averageQuizScore}%</div>
                             </div>
-                            <div className="bg-orange-50 rounded-lg p-4">
-                                <div className="text-orange-500 text-sm font-medium">Points Earned</div>
-                                <div className="text-2xl font-bold">{userStats.points}</div>
+                            <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                                <div className="text-sm font-medium text-yellow-600 mb-1">Points Earned</div>
+                                <div className="text-3xl font-bold text-gray-900">{userStats.points}</div>
                             </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-lg shadow-lg p-6 mb-8 text-center">
+                        <p className="text-gray-600">Log in to see your progress.</p>
+                        <Link to="/login" className="text-orange-600 hover:underline mt-2 inline-block">Go to Login</Link>
+                    </div>
+                )}
+
+                <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">How to Earn Points</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12">
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-700 mb-4">Museum Visits</h3>
+                            <ul className="space-y-3 text-gray-600 list-disc list-inside">
+                                <li>
+                                    Visit {criteria.visits.level1.count} museums: <span className="font-medium text-gray-800">+{criteria.visits.level1.points} points</span>
+                                </li>
+                                <li>
+                                    Visit {criteria.visits.level2.count} museums: <span className="font-medium text-gray-800">+{criteria.visits.level2.points} points</span>
+                                </li>
+                                <li>
+                                    Visit {criteria.visits.level3.count} museums: <span className="font-medium text-gray-800">+{criteria.visits.level3.points} points</span>
+                                </li>
+                            </ul>
+                            <p className="text-xs text-gray-500 mt-2 italic">(Points awarded based on total confirmed visits)</p>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-700 mb-4">Quiz Performance</h3>
+                            <ul className="space-y-3 text-gray-600 list-disc list-inside">
+                                <li>
+                                    Score {criteria.quizzes.level1.score}% or higher: <span className="font-medium text-gray-800">+{criteria.quizzes.level1.points} points</span> (per quiz)
+                                </li>
+                                <li>
+                                    Score {criteria.quizzes.level2.score}% or higher: <span className="font-medium text-gray-800">+{criteria.quizzes.level2.points} points</span> (per quiz)
+                                </li>
+                                <li>
+                                    Score {criteria.quizzes.level3.score}% or higher: <span className="font-medium text-gray-800">+{criteria.quizzes.level3.points} points</span> (per quiz)
+                                </li>
+                            </ul>
+                            <p className="text-xs text-gray-500 mt-2 italic">(Points awarded for each quiz meeting the criteria)</p>
+                        </div>
+                    </div>
+                </div>
+
+                {userStats && (
+                    <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+                        <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Your Points Progress</h2>
+                        <div className="mb-8 px-2 sm:px-4">
+                            <div className="flex justify-between mb-1 text-sm font-medium text-center">
+                                <span className={`flex-1 ${currentPoints >= POINT_LEVELS.BRONZE.threshold ? 'text-yellow-700' : 'text-gray-500'}`}>Bronze</span>
+                                <span className={`flex-1 ${currentPoints >= POINT_LEVELS.SILVER.threshold ? 'text-gray-600' : 'text-gray-500'}`}>Silver</span>
+                                <span className={`flex-1 ${currentPoints >= POINT_LEVELS.GOLD.threshold ? 'text-yellow-500' : 'text-gray-500'}`}>Gold</span>
+                            </div>
+                            <div className="relative h-4 mb-2 text-xs sm:text-sm text-gray-500">
+                                <span style={{ position: 'absolute', left: '0%' }}>0</span>
+                                <span style={{ position: 'absolute', left: `${(POINT_LEVELS.BRONZE.threshold / MAX_POINTS_DISPLAY) * 100}%`, transform: 'translateX(-50%)' }}>{POINT_LEVELS.BRONZE.threshold}</span>
+                                <span style={{ position: 'absolute', left: `${(POINT_LEVELS.SILVER.threshold / MAX_POINTS_DISPLAY) * 100}%`, transform: 'translateX(-50%)' }}>{POINT_LEVELS.SILVER.threshold}</span>
+                                <span style={{ position: 'absolute', right: '0%' }}>{POINT_LEVELS.GOLD.threshold}</span>
+                            </div>
+                            <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden relative">
+                                <div className="absolute h-full w-px bg-gray-400" style={{ left: `${(POINT_LEVELS.BRONZE.threshold / MAX_POINTS_DISPLAY) * 100}%` }}></div>
+                                <div className="absolute h-full w-px bg-gray-400" style={{ left: `${(POINT_LEVELS.SILVER.threshold / MAX_POINTS_DISPLAY) * 100}%` }}></div>
+                                <div
+                                    className={`h-full rounded-full ${currentTier.color} transition-all duration-500 ease-out`}
+                                    style={{ width: `${progressPercent}%` }}
+                                ></div>
+                            </div>
+                            <div className="flex justify-between items-center mt-2 text-sm">
+                                <div className="flex items-center">
+                                    <div className={`w-3 h-3 rounded-full ${currentTier.color} mr-2`}></div>
+                                    <span className="text-gray-700">Current Tier: <span className="font-medium">{currentTier.name}</span></span>
+                                </div>
+                                <span className="text-gray-600 font-medium">{currentPoints} points earned</span>
+                            </div>
+                            {currentTier.nextThreshold && (
+                                <p className="text-xs text-gray-500 text-right mt-1">
+                                    {Math.max(0, currentTier.nextThreshold - currentPoints)} points to {getCurrentTier(currentTier.nextThreshold).name}
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
 
-                {/* Badge Criteria */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">How to Earn Badges</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Visit Badges */}
-                        <div>
-                            <h3 className="text-lg font-semibold mb-4">Visit Badges</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-4">
-                                    <div className="bg-orange-100 rounded-full p-3">
-                                        <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">Bronze Badge</div>
-                                        <div className="text-sm text-gray-600">Visit {criteria.visits.bronze.count} museums (+{criteria.visits.bronze.points} points)</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    <div className="bg-gray-100 rounded-full p-3">
-                                        <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">Silver Badge</div>
-                                        <div className="text-sm text-gray-600">Visit {criteria.visits.silver.count} museums (+{criteria.visits.silver.points} points)</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    <div className="bg-yellow-100 rounded-full p-3">
-                                        <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">Gold Badge</div>
-                                        <div className="text-sm text-gray-600">Visit {criteria.visits.gold.count} museums (+{criteria.visits.gold.points} points)</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div className="bg-white rounded-lg shadow-lg p-8">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Available Rewards</h2>
 
-                        {/* Quiz Badges */}
-                        <div>
-                            <h3 className="text-lg font-semibold mb-4">Quiz Badges</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-4">
-                                    <div className="bg-orange-100 rounded-full p-3">
-                                        <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">Bronze Badge</div>
-                                        <div className="text-sm text-gray-600">Score {criteria.quizzes.bronze.score}% or higher (+{criteria.quizzes.bronze.points} points)</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    <div className="bg-gray-100 rounded-full p-3">
-                                        <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">Silver Badge</div>
-                                        <div className="text-sm text-gray-600">Score {criteria.quizzes.silver.score}% or higher (+{criteria.quizzes.silver.points} points)</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    <div className="bg-yellow-100 rounded-full p-3">
-                                        <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium">Gold Badge</div>
-                                        <div className="text-sm text-gray-600">Score {criteria.quizzes.gold.score}% or higher (+{criteria.quizzes.gold.points} points)</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    {redeemError && <p className="text-red-600 text-center mb-4">{redeemError}</p>}
+                    {redeemSuccess && <p className="text-green-600 text-center mb-4">{redeemSuccess}</p>}
 
-                {/* Available Rewards */}
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Rewards</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {criteria.rewards.map((reward, index) => (
-                            <div key={index} className="border rounded-lg p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-semibold">{reward.name}</h3>
-                                    <span className="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">
-                                        {reward.points} points
-                                    </span>
+                        {criteria.rewards.map((reward) => (
+                            <div key={reward.id} className="border border-gray-200 rounded-lg p-5 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
+                                <div>
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h3 className="text-lg font-semibold text-gray-800">{reward.name}</h3>
+                                        <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                                            {reward.points} points
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-5">{reward.description}</p>
                                 </div>
-                                <p className="text-gray-600">{reward.description}</p>
-                                {userStats && userStats.points >= reward.points && (
-                                    <button className="mt-4 w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
-                                        Redeem Reward
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => handleRedeemReward(reward)}
+                                    disabled={!userStats || currentPoints < reward.points || isRedeeming}
+                                    className={`w-full px-4 py-2 rounded text-white font-medium transition-colors ${
+                                        userStats && currentPoints >= reward.points && !isRedeeming
+                                            ? 'bg-orange-500 hover:bg-orange-600'
+                                            : 'bg-gray-400 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {isRedeeming ? 'Redeeming...' : (userStats && currentPoints >= reward.points ? 'Redeem' : `Need ${reward.points} pts`)}
+                                </button>
                             </div>
                         ))}
                     </div>
+                    <div className="mt-8 text-center">
+                        <Link to="/rewards" className="text-orange-600 hover:underline">
+                            View Your Progress Details →
+                        </Link>
+                    </div>
+                </div>
+
+                <div className="mt-8 text-center">
+                    <Link to="/dashboard" className="text-gray-600 hover:text-orange-600 font-medium">
+                        ← Back to Dashboard
+                    </Link>
                 </div>
             </div>
         </div>
     );
-} 
+}

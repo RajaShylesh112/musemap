@@ -1,42 +1,111 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getSupabase } from '../supabase';
+import { supabase } from '../lib/supabase';
 
 export function DashboardPage() {
-    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
     const [bookings, setBookings] = useState([]);
+    const [quizHistory, setQuizHistory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const supabase = getSupabase();
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchUserData();
-        fetchBookings();
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                if (!user) {
+                    console.log("No user logged in.");
+                    setLoading(false);
+                    return;
+                }
+
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('name, email, points')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (profileError) {
+                    console.warn("Could not fetch profile:", profileError.message);
+                    setProfile({
+                        name: user.user_metadata?.name || 'User',
+                        email: user.email,
+                        points: 0
+                    });
+                } else {
+                    setProfile({
+                        name: profileData?.name || user.user_metadata?.name || 'User',
+                        email: profileData?.email || user.email,
+                        points: profileData?.points || 0
+                    });
+                }
+
+                await Promise.all([
+                    fetchBookings(user.id),
+                    fetchQuizHistory(user.id)
+                ]);
+
+            } catch (err) {
+                console.error("Error fetching dashboard data:", err);
+                setError(err.message || "Failed to load dashboard data.");
+                setProfile(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+
     }, []);
 
-    const fetchUserData = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+    const fetchBookings = async (userId) => {
+        const { data, error } = await supabase
+            .from('bookings')
+            .select('id, museum_id, booking_date, status, museums(name)')
+            .eq('user_id', userId)
+            .order('booking_date', { ascending: false })
+            .limit(5);
+
+        if (error) {
+            console.error("Error fetching bookings:", error);
+            setBookings([]);
+        } else {
+            const formattedBookings = data.map(b => ({
+                id: b.id,
+                museum: b.museums?.name || 'Unknown Museum',
+                date: b.booking_date,
+                status: b.status
+            }));
+            setBookings(formattedBookings);
+        }
     };
 
-    const fetchBookings = async () => {
-        // This would typically fetch from your bookings table
-        // For now, we'll use mock data
-        const mockBookings = [
-            {
-                id: 1,
-                museum: "National Museum, New Delhi",
-                date: "2024-04-15",
-                status: "Confirmed"
-            },
-            {
-                id: 2,
-                museum: "Indian Museum, Kolkata",
-                date: "2024-04-20",
-                status: "Pending"
-            }
-        ];
-        setBookings(mockBookings);
-        setLoading(false);
+    const fetchQuizHistory = async (userId) => {
+        try {
+            const { data, error } = await supabase
+                .from('quiz_results')
+                .select('id, score, completed_at, quizzes(title)')
+                .eq('user_id', userId)
+                .order('completed_at', { ascending: false })
+                .limit(5);
+
+            if (error) throw error;
+
+            const formattedHistory = data.map(result => ({
+                id: result.id,
+                title: result.quizzes?.title || 'Unknown Quiz',
+                score: result.score,
+                completed_at: result.completed_at
+            }));
+            setQuizHistory(formattedHistory);
+
+        } catch (error) {
+            console.error("Error fetching quiz history:", error);
+            setQuizHistory([]);
+        }
     };
 
     if (loading) {
@@ -47,25 +116,54 @@ export function DashboardPage() {
         );
     }
 
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center p-6 bg-white shadow-md rounded-lg">
+                    <h2 className="text-xl font-bold text-red-600 mb-4">Error</h2>
+                    <p className="text-gray-600 mb-4">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center p-6 bg-white shadow-md rounded-lg">
+                    <p className="text-gray-600 mb-4">Please log in to view your dashboard.</p>
+                    <Link to="/login" className="text-orange-600 hover:text-orange-500">
+                        Go to Login
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="bg-white shadow rounded-lg p-6 mb-8">
-                    <div className="flex items-center space-x-4">
-                        <div className="bg-orange-100 rounded-full p-3">
-                            <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                            <div className="bg-orange-100 rounded-full p-3">
+                                <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                            <div>
+                                {profile.name && <h2 className="text-xl font-bold text-gray-900">{profile.name}</h2>}
+                                {profile.email && <p className="text-sm text-gray-600">{profile.email}</p>}
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-900">{user?.user_metadata?.name}</h2>
-                            <p className="text-gray-600">{user?.email}</p>
+                        <div className="text-center sm:text-right">
+                            <p className="text-sm text-gray-500">Points Earned</p>
+                            <p className="text-2xl font-bold text-orange-600">{profile.points}</p>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Upcoming Bookings */}
                     <div className="bg-white shadow rounded-lg p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Bookings</h3>
                         {bookings.length > 0 ? (
@@ -75,12 +173,14 @@ export function DashboardPage() {
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <h4 className="font-medium text-gray-900">{booking.museum}</h4>
-                                                <p className="text-sm text-gray-600">Date: {booking.date}</p>
+                                                <p className="text-sm text-gray-600">Date: {new Date(booking.date).toLocaleDateString()}</p>
                                             </div>
-                                            <span className={`px-2 py-1 rounded-full text-xs ${
-                                                booking.status === 'Confirmed' 
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                booking.status === 'Confirmed'
                                                     ? 'bg-green-100 text-green-800'
-                                                    : 'bg-yellow-100 text-yellow-800'
+                                                    : booking.status === 'Pending'
+                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                    : 'bg-gray-100 text-gray-800'
                                             }`}>
                                                 {booking.status}
                                             </span>
@@ -91,42 +191,48 @@ export function DashboardPage() {
                         ) : (
                             <p className="text-gray-600">No upcoming bookings</p>
                         )}
-                        <Link 
+                        <Link
                             to="/booking"
-                            className="mt-4 inline-block text-orange-600 hover:text-orange-500"
+                            className="mt-4 inline-block text-orange-600 hover:text-orange-500 font-medium"
                         >
                             Book a new visit →
                         </Link>
                     </div>
 
-                    {/* Quiz History */}
                     <div className="bg-white shadow rounded-lg p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quiz History</h3>
-                        <div className="space-y-4">
-                            <div className="border rounded-lg p-4">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h4 className="font-medium text-gray-900">Museum Knowledge Quiz</h4>
-                                        <p className="text-sm text-gray-600">Completed on: 2024-04-01</p>
+                        {quizHistory.length > 0 ? (
+                            <div className="space-y-4">
+                                {quizHistory.map(result => (
+                                    <div key={result.id} className="border rounded-lg p-4">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h4 className="font-medium text-gray-900">{result.title}</h4>
+                                                <p className="text-sm text-gray-600">
+                                                    Completed on: {new Date(result.completed_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                Score: {result.score}%
+                                            </span>
+                                        </div>
                                     </div>
-                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                                        Score: 80%
-                                    </span>
-                                </div>
+                                ))}
                             </div>
-                            <Link 
-                                to="/quiz"
-                                className="mt-4 inline-block text-orange-600 hover:text-orange-500"
-                            >
-                                Take another quiz →
-                            </Link>
-                        </div>
+                        ) : (
+                            <p className="text-gray-600">No quiz history found.</p>
+                        )}
+                        <Link
+                            to="/quiz"
+                            className="mt-4 inline-block text-orange-600 hover:text-orange-500 font-medium"
+                        >
+                            Take another quiz →
+                        </Link>
                     </div>
                 </div>
 
-                {/* Quick Actions */}
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Link 
+                    <Link
                         to="/search"
                         className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow"
                     >
@@ -143,8 +249,8 @@ export function DashboardPage() {
                         </div>
                     </Link>
 
-                    <Link 
-                        to="/rewards/criteria"
+                    <Link
+                        to="/rewards"
                         className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow"
                     >
                         <div className="flex items-center space-x-4">
@@ -155,12 +261,12 @@ export function DashboardPage() {
                             </div>
                             <div>
                                 <h4 className="font-medium text-gray-900">Rewards</h4>
-                                <p className="text-sm text-gray-600">Check your rewards status</p>
+                                <p className="text-sm text-gray-600">Check status & redeem ({profile.points} pts)</p>
                             </div>
                         </div>
                     </Link>
 
-                    <Link 
+                    <Link
                         to="/contact"
                         className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow"
                     >
@@ -180,4 +286,4 @@ export function DashboardPage() {
             </div>
         </div>
     );
-} 
+}

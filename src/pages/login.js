@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export function LoginPage() {
@@ -10,6 +10,7 @@ export function LoginPage() {
         email: '',
         password: ''
     });
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -33,8 +34,7 @@ export function LoginPage() {
 
             if (error) throw error;
 
-            setSuccess(true);
-            setFormData({ email: '', password: '' });
+            navigate('/dashboard');
         } catch (error) {
             setError(error.message);
         } finally {
@@ -50,12 +50,6 @@ export function LoginPage() {
                 {error && (
                     <div className="bg-red-100 text-red-600 p-3 rounded mb-4">
                         {error}
-                    </div>
-                )}
-
-                {success && (
-                    <div className="bg-green-100 text-green-600 p-3 rounded mb-4">
-                        Login successful! You can now go to the <Link to="/dashboard" className="underline">Dashboard</Link>
                     </div>
                 )}
 
