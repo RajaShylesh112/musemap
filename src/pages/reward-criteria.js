@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase'; // Assuming supabase is initialized here
+import { supabase } from '../lib/supabase'; // Assuming supabase is initialized 
 
 // Define reward levels and thresholds locally for this component's display logic
 const POINT_LEVELS = {
