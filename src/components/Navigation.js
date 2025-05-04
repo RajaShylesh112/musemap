@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSupabase } from '../supabase';
 import { FiMoon, FiSun } from 'react-icons/fi';
@@ -6,30 +6,38 @@ import { FiMoon, FiSun } from 'react-icons/fi';
 export function Navigation() {
     const navigate = useNavigate();
     const supabase = getSupabase();
-    const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-    const [isAdmin, setIsAdmin] = React.useState(false);
-    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-    const [darkMode, setDarkMode] = React.useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true'); // Initialize from localStorage
 
-    React.useEffect(() => {
-        checkAuthStatus();
-        const storedDarkMode = localStorage.getItem('darkMode') === 'true';
-        setDarkMode(storedDarkMode);
-        
-        // Apply dark mode class to HTML element if needed
-        if (storedDarkMode) {
+    useEffect(() => {
+        // Initial check for dark mode
+        if (darkMode) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
-    }, []);
 
-    const checkAuthStatus = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsLoggedIn(!!session);
-        // You would typically check user role in your database
-        setIsAdmin(session?.user?.user_metadata?.isAdmin || false);
-    };
+        // Check initial auth status
+        const checkInitialAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setIsLoggedIn(!!session);
+            setIsAdmin(session?.user?.user_metadata?.isAdmin || false);
+        };
+        checkInitialAuth();
+
+        // Listen for auth state changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setIsLoggedIn(!!session);
+            setIsAdmin(session?.user?.user_metadata?.isAdmin || false);
+        });
+
+        // Cleanup subscription on unmount
+        return () => {
+            subscription?.unsubscribe();
+        };
+    }, [supabase, darkMode]); // Rerun effect if supabase instance or darkMode changes
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -46,8 +54,7 @@ export function Navigation() {
         const newDarkMode = !darkMode;
         setDarkMode(newDarkMode);
         localStorage.setItem('darkMode', newDarkMode);
-        
-        // Apply or remove dark class from HTML element
+
         if (newDarkMode) {
             document.documentElement.classList.add('dark');
         } else {
@@ -180,6 +187,14 @@ export function Navigation() {
                                     </Link>
                                 </div>
                             )}
+                            <button
+                                onClick={toggleDarkMode}
+                                className="flex items-center justify-center w-full mt-2 p-2 rounded-md text-gray-700 hover:bg-gray-200 dark:text-orange-300 dark:hover:bg-gray-700 transition-colors focus:outline-none"
+                                aria-label="Toggle dark mode"
+                            >
+                                {darkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
+                                <span className="ml-2">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                            </button>
                         </div>
                     </div>
                 )}

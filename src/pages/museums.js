@@ -45,7 +45,18 @@ export function MuseumsPage() {
     const filteredMuseums = museums.filter(museum => {
         const matchesSearch = museum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             museum.description.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesLocation = !filters.location || museum.location === filters.location;
+        const matchesLocation = !filters.location || 
+            museum.location.toLowerCase().includes(filters.location.toLowerCase()) ||
+            museum.name.toLowerCase().includes(filters.location.toLowerCase());
+        
+        // Debugging logs
+        console.log('Filtering museum:', {
+            name: museum.name,
+            location: museum.location,
+            matchesSearch,
+            matchesLocation
+        });
+        
         return matchesSearch && matchesLocation;
     });
 
