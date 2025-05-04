@@ -67,23 +67,23 @@ export function MuseumsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50 py-8 dark:bg-gray-900 dark:text-orange-300">
             <div className="max-w-7xl mx-auto px-4">
                 {/* Search and Filters */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-8 dark:bg-gray-800 dark:text-orange-300">
                     <div className="flex flex-col md:flex-row gap-4">
                         <input
                             type="text"
                             placeholder="Search museums..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-orange-300 dark:placeholder-orange-200"
                         />
                         <select
                             name="location"
                             value={filters.location}
                             onChange={handleFilterChange}
-                            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-orange-300"
                         >
                             <option value="">All Locations</option>
                             <option value="Delhi">Delhi</option>
@@ -94,7 +94,7 @@ export function MuseumsPage() {
                             name="type"
                             value={filters.type}
                             onChange={handleFilterChange}
-                            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-orange-300"
                         >
                             <option value="">All Types</option>
                             <option value="art">Art</option>
@@ -105,7 +105,7 @@ export function MuseumsPage() {
                             name="hours"
                             value={filters.hours}
                             onChange={handleFilterChange}
-                            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-orange-300"
                         >
                             <option value="">All Hours</option>
                             <option value="morning">Morning</option>
@@ -123,27 +123,26 @@ export function MuseumsPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredMuseums.map(museum => (
-                            <div key={museum.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                            <div key={museum.id} className="bg-white rounded-lg shadow-lg overflow-hidden dark:bg-gray-800 dark:text-orange-300">
                                 <img
                                     src={getImage(museum.name, museum.image_url)}
                                     alt={museum.name}
                                     className="w-full h-48 object-cover"
                                 />
                                 <div className="p-6">
-                                    <h3 className="text-xl font-bold mb-2">{museum.name}</h3>
-                                    <p className="text-gray-600 mb-4 line-clamp-3">{museum.description}</p> {/* Added line-clamp for consistency */}
-                                    <div className="flex justify-between items-center mt-4"> {/* Added margin-top */}
+                                    <h3 className="text-xl font-bold mb-2 dark:text-orange-300">{museum.name}</h3>
+                                    <p className="text-gray-600 mb-4 line-clamp-3 dark:text-orange-200">{museum.description}</p>
+                                    <div className="flex justify-between items-center mt-4">
                                         <Link
                                             to={`/museums/${museum.id}`}
-                                            className="text-orange-500 hover:text-orange-600 font-medium"
+                                            className="text-orange-500 hover:text-orange-600 font-medium dark:text-orange-400 dark:hover:text-orange-300"
                                         >
                                             View Details
                                         </Link>
-                                        {/* Display a specific price, e.g., Indian Nationals, or a placeholder */}
-                                        <span className="text-gray-500">
+                                        <span className="text-gray-500 dark:text-orange-200">
                                             {museum.ticket_price && typeof museum.ticket_price === 'object' && museum.ticket_price.indian_nationals !== undefined
                                                 ? `From ₹${museum.ticket_price.indian_nationals}`
-                                                : 'Price Varies'} {/* Fallback text */}
+                                                : 'Price Varies'}
                                         </span>
                                     </div>
                                 </div>
@@ -154,7 +153,7 @@ export function MuseumsPage() {
 
                 {filteredMuseums.length === 0 && !loading && (
                     <div className="text-center py-12">
-                        <p className="text-gray-600">No museums found matching your criteria.</p>
+                        <p className="text-gray-600 dark:text-orange-300">No museums found matching your criteria.</p>
                     </div>
                 )}
             </div>

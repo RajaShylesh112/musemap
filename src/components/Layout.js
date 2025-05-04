@@ -4,7 +4,7 @@ import { Footer } from './Footer';
 
 export function Layout({ children }) {
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-white dark:bg-gray-900">
             <Navigation />
             <main className="flex-grow">
                 {children}
@@ -12,4 +12,4 @@ export function Layout({ children }) {
             <Footer />
         </div>
     );
-} 
+}

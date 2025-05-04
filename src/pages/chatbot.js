@@ -167,8 +167,8 @@ export function ChatbotPage() {
 
         return (
             <div key={index} className={`mb-4 ${isBot ? 'mr-20' : 'ml-20'}`}>
-                <div className={`p-4 rounded-lg ${isBot ? 'bg-white' : 'bg-orange-500 text-white'}`}>
-                    <p>{message.content}</p>
+                <div className={`p-4 rounded-lg ${isBot ? 'bg-white dark:bg-gray-700' : 'bg-orange-500 text-white'}`}>
+                    <p className={`dark:text-white`}>{message.content}</p>
 
                     {/* Options */}
                     {message.options && (
@@ -177,7 +177,7 @@ export function ChatbotPage() {
                                 <button
                                     key={i}
                                     onClick={() => handleOptionClick(option)}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
                                 >
                                     {option}
                                 </button>
@@ -191,7 +191,7 @@ export function ChatbotPage() {
                             {message.faqs.map((faq, i) => (
                                 <div key={i} className="border-b pb-2">
                                     <h4 className="font-medium">{faq.question}</h4>
-                                    <p className="text-gray-600 text-sm mt-1">{faq.answer}</p>
+                                    <p className={`text-gray-600 dark:text-white text-sm mt-1`}>{faq.answer}</p>
                                 </div>
                             ))}
                         </div>
@@ -203,10 +203,10 @@ export function ChatbotPage() {
                             {message.recommendations.map((rec, i) => (
                                 <div key={i} className="border rounded p-3">
                                     <h4 className="font-medium">{rec.name}</h4>
-                                    <p className="text-sm text-gray-600">{rec.description}</p>
+                                    <p className={`text-sm text-gray-600 dark:text-white`}>{rec.description}</p>
                                     <div className="mt-2">
                                         {rec.tags.map((tag, j) => (
-                                            <span key={j} className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mr-2">
+                                            <span key={j} className="inline-block bg-gray-100 text-gray-600 dark:text-white text-xs px-2 py-1 rounded mr-2">
                                                 {tag}
                                             </span>
                                         ))}
@@ -225,7 +225,7 @@ export function ChatbotPage() {
                                         <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center text-sm mr-2">
                                             {i + 1}
                                         </span>
-                                        <span>{step}</span>
+                                        <span className={`text-gray-600 dark:text-white`}>{step}</span>
                                     </div>
                                 ))}
                             </div>
@@ -244,7 +244,7 @@ export function ChatbotPage() {
                             {message.museums.map((museum, i) => (
                                 <div key={i} className="border rounded p-3">
                                     <h4 className="font-medium">{museum.name}</h4>
-                                    <p className="text-sm text-gray-600">{museum.description}</p>
+                                    <p className={`text-sm text-gray-600 dark:text-white`}>{museum.description}</p>
                                     <Link 
                                         to={`/museum/${i + 1}`}
                                         className="mt-2 text-orange-500 hover:text-orange-600 text-sm"
@@ -266,8 +266,8 @@ export function ChatbotPage() {
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                     {/* Chat Header */}
                     <div className="bg-orange-500 text-white p-4">
-                        <h2 className="text-xl font-semibold">Museum Assistant</h2>
-                        <p className="text-sm opacity-75">Ask me anything about our museums!</p>
+                        <h2 className="text-xl font-semibold dark:text-orange-400">Museum Assistant</h2>
+                        <p className="text-sm opacity-75 dark:text-white">Ask me anything about our museums!</p>
                     </div>
 
                     {/* Chat Messages */}

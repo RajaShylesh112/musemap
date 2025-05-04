@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global dark mode styles */
+@layer base {
+  .dark {
+    /* Default text colors for dark mode */
+    --tw-text-opacity: 1;
+    color: rgba(253, 186, 116, var(--tw-text-opacity)); /* orange-300 */
+  }
+  
+  /* Headings in dark mode */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    --tw-text-opacity: 1;
+    color: rgba(251, 146, 60, var(--tw-text-opacity)); /* orange-400 */
+  }
+  
+  /* Paragraphs in dark mode */
+  .dark p {
+    --tw-text-opacity: 1;
+    color: rgba(255,255,255,var(--tw-text-opacity)); /* white */
+  }
+  
+  /* Form elements in dark mode */
+  .dark input, .dark select, .dark textarea {
+    --tw-bg-opacity: 1;
+    background-color: rgba(55, 65, 81, var(--tw-bg-opacity)); /* gray-700 */
+    --tw-border-opacity: 1;
+    border-color: rgba(75, 85, 99, var(--tw-border-opacity)); /* gray-600 */
+    --tw-text-opacity: 1;
+    color: rgba(253, 186, 116, var(--tw-text-opacity)); /* orange-300 */
+  }
+  
+  /* Placeholder text in dark mode */
+  .dark input::placeholder, .dark textarea::placeholder {
+    --tw-text-opacity: 1;
+    color: rgba(254, 215, 170, var(--tw-text-opacity)); /* orange-200 */
+  }
+  
+  /* Background colors for cards and containers in dark mode */
+  .dark .bg-white {
+    --tw-bg-opacity: 1;
+    background-color: rgba(31, 41, 55, var(--tw-bg-opacity)); /* gray-800 */
+  }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -133,4 +176,61 @@ body {
 
 .booking-card {
   @apply bg-white p-6 rounded-lg shadow-lg sticky top-4;
+}
+
+/* Dark mode styles */
+@layer components {
+  .dark .bg-white { background-color: #1f2937; } /* Example dark background */
+  .dark .text-gray-800 { color: #f3f4f6; } /* Light text in dark mode */
+  .dark .bg-gray-50 { background-color: #111827; }
+  .dark .text-gray-600 { color: #9ca3af; }
+  .dark .bg-peach-100 { background-color: #374151; }
+  .dark .hover\:text-orange-500:hover { color: #fdba74; } /* Adjust hover colors */
+  .dark .bg-orange-500 { background-color: #f97316; }
+  .dark .border-orange-500 { border-color: #fdba74; }
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .navbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  
+  .nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .cen {
+    height: 50vh;
+  }
+  
+  .cen-content {
+    padding: 0.75rem;
+  }
+  
+  .museum-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .museum-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .booking-card {
+    width: 100%;
+  }
+  
+  .form-container {
+    padding: 1rem;
+  }
+  
+  .form-container input,
+  .form-container button {
+    padding: 0.75rem;
+  }
 }

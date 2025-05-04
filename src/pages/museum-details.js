@@ -95,7 +95,7 @@ export function MuseumDetailsPage() {
             <div className="min-h-screen bg-gray-100 flex items-center justify-center">
                 <div className="text-center p-6 bg-white shadow-md rounded-lg">
                     <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Museum</h2>
-                    <p className="text-gray-600 mb-4">{error}</p>
+                    <p className="text-gray-600 dark:text-white mb-4">{error}</p>
                     <button
                         onClick={() => navigate('/museums')}
                         className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
@@ -115,7 +115,7 @@ export function MuseumDetailsPage() {
                 <FontAwesomeIcon
                     key={i}
                     icon={i <= Math.round(rating) ? faStarSolid : faStarRegular}
-                    className={i <= Math.round(rating) ? "text-yellow-500" : "text-gray-300"}
+                    className={i <= Math.round(rating) ? "text-yellow-500" : "text-gray-300 dark:text-white"}
                 />
             );
         }
@@ -149,7 +149,7 @@ export function MuseumDetailsPage() {
                         <div className="flex items-center mt-2">
                             {renderStars(museumData?.rating || 0)}
                             {/* Increased font size */}
-                            <span className="text-gray-200 ml-3 text-sm md:text-base">
+                            <span className="text-gray-200 ml-3 text-sm md:text-base dark:text-white">
                                 ({museumData?.rating?.toFixed(1)}/5 from {museumData?.visitorCount?.toLocaleString()} visitors)
                             </span>
                         </div>
@@ -173,7 +173,7 @@ export function MuseumDetailsPage() {
                                             // Increased padding and font size
                                             className={`pb-3 px-1 capitalize font-medium text-base ${activeTab === tab
                                                 ? 'border-b-2 border-orange-500 text-orange-600'
-                                                : 'text-gray-500 hover:text-gray-700'
+                                                : 'text-gray-500 dark:text-white hover:text-gray-700'
                                                 }`}
                                         >
                                             {tab.replace(/([A-Z])/g, ' $1')}
@@ -188,20 +188,20 @@ export function MuseumDetailsPage() {
                                     // Increased spacing
                                     <div className="space-y-6">
                                         {/* Increased font size and margin */}
-                                        <h2 className="text-xl md:text-2xl font-semibold mb-3">Overview</h2>
+                                        <h2 className="text-2xl font-bold mb-4 dark:text-orange-400">Overview</h2>
                                         {museumData?.about ? (
                                             // Increased font size and line height
-                                            <p className="text-gray-700 text-base leading-relaxed">{museumData.about}</p>
+                                            <p className="text-gray-700 dark:text-white text-base leading-relaxed">{museumData.about}</p>
                                         ) : (
-                                            <p className="text-gray-500 text-base">Overview information not available.</p>
+                                            <p className="text-gray-500 dark:text-white text-base">Overview information not available.</p>
                                         )}
                                         {museumData?.interestingFacts && museumData.interestingFacts.length > 0 && (
                                             // Increased margin-top
                                             <div className="mt-4">
                                                 {/* Increased font size and margin */}
-                                                <h3 className="font-semibold text-lg mb-2">Interesting Facts:</h3>
+                                                <h3 className="font-semibold text-lg mb-2 dark:text-orange-400">Interesting Facts:</h3>
                                                 {/* Increased font size and spacing */}
-                                                <ul className="list-disc list-inside text-base text-gray-600 space-y-1.5">
+                                                <ul className="list-disc list-inside text-base text-gray-600 dark:text-white space-y-1.5">
                                                     {museumData.interestingFacts.map((fact, i) => <li key={i}>{fact}</li>)}
                                                 </ul>
                                             </div>
@@ -210,9 +210,9 @@ export function MuseumDetailsPage() {
                                             // Increased margin-top
                                             <div className="mt-4">
                                                 {/* Increased font size and margin */}
-                                                <h3 className="font-semibold text-lg mb-2">Facilities:</h3>
+                                                <h3 className="font-semibold text-lg mb-2 dark:text-orange-400">Facilities:</h3>
                                                 {/* Increased font size and spacing */}
-                                                <ul className="list-disc list-inside text-base text-gray-600 space-y-1.5">
+                                                <ul className="list-disc list-inside text-base text-gray-600 dark:text-white space-y-1.5">
                                                     {museumData.facilities.map((item, i) => <li key={i}>{item}</li>)}
                                                 </ul>
                                             </div>
@@ -250,12 +250,12 @@ export function MuseumDetailsPage() {
                                                                 </p>
                                                             )}
                                                             {/* Name */}
-                                                            <h3 className="text-white text-xl font-bold mb-2">
+                                                            <h3 className="text-white text-xl font-bold mb-2 dark:text-orange-400">
                                                                 {artifact.name} {/* Use name from schema */}
                                                             </h3>
                                                             {/* Description */}
                                                             {artifact.description && ( // Check if description exists
-                                                                <p className="text-white/80 text-sm max-h-0 overflow-hidden transition-all duration-500 group-hover:max-h-20">
+                                                                <p className="text-white/80 text-sm max-h-0 overflow-hidden transition-all duration-500 group-hover:max-h-20 dark:text-white">
                                                                     {artifact.description} {/* Use description from schema */}
                                                                 </p>
                                                             )}
@@ -265,7 +265,7 @@ export function MuseumDetailsPage() {
                                             ))
                                         ) : (
                                             // Fallback message, ensure it spans columns
-                                            <p className="text-gray-500 text-base md:col-span-2">No key artifacts listed.</p>
+                                            <p className="text-gray-500 dark:text-white text-base md:col-span-2">No key artifacts listed.</p>
                                         )}
                                     </div>
                                 )}
@@ -307,10 +307,10 @@ export function MuseumDetailsPage() {
                                                             </span>
                                                         )}
                                                         {/* Title */}
-                                                        <h3 className="text-xl font-semibold mt-2">{exhibition.title}</h3>
+                                                        <h3 className="text-xl font-semibold mt-2 dark:text-orange-400">{exhibition.title}</h3>
                                                         {/* Dates */}
                                                         {(exhibition.start_date || exhibition.end_date) && (
-                                                            <p className="text-sm text-gray-500">
+                                                            <p className="text-sm text-gray-600 dark:text-white">
                                                                 {formatDate(exhibition.start_date)}
                                                                 {exhibition.start_date && exhibition.end_date ? ' - ' : ''}
                                                                 {formatDate(exhibition.end_date)}
@@ -318,14 +318,14 @@ export function MuseumDetailsPage() {
                                                         )}
                                                         {/* Description */}
                                                         {exhibition.description && (
-                                                            <p className="mt-2 text-gray-700 text-base leading-relaxed">{exhibition.description}</p>
+                                                            <p className="mt-2 text-gray-700 dark:text-white text-base leading-relaxed">{exhibition.description}</p>
                                                         )}
                                                     </div>
                                                 );
                                             })
                                         ) : (
                                             // Fallback message
-                                            <p className="text-gray-500 text-base">No exhibitions listed.</p>
+                                            <p className="text-gray-500 dark:text-white text-base">No exhibitions listed.</p>
                                         )}
                                     </div>
                                 )}
@@ -337,7 +337,7 @@ export function MuseumDetailsPage() {
                             {/* Visiting Hours Card - Increased padding and spacing */}
                             <div className="bg-white shadow-md rounded-lg p-6">
                                 {/* Increased font size and margin */}
-                                <h2 className="text-lg font-semibold mb-4 flex items-center">
+                                <h2 className="text-lg font-semibold mb-4 flex items-center dark:text-orange-400">
                                     <FontAwesomeIcon icon={faClock} className="mr-2.5 text-orange-500" />
                                     Visiting Hours
                                 </h2>
@@ -349,16 +349,16 @@ export function MuseumDetailsPage() {
                                             .map(([key, value]) => (
                                                 // Increased padding
                                                 <div key={key} className="flex justify-between py-1">
-                                                    <span className="text-gray-600 capitalize">{key.replace(/_/g, ' ')}</span>
-                                                    <span className="text-gray-800 font-medium">{String(value)}</span>
+                                                    <span className="text-gray-600 dark:text-white capitalize">{key.replace(/_/g, ' ')}</span>
+                                                    <span className="text-gray-800 dark:text-white font-medium">{String(value)}</span>
                                                 </div>
                                             ))
                                     ) : (
-                                        <p className="text-gray-500">Hours not available.</p>
+                                        <p className="text-gray-500 dark:text-white">Hours not available.</p>
                                     )}
                                     {museumData?.openingHours?.notes && typeof museumData.openingHours.notes === 'string' && (
                                          // Increased margin/padding and font size
-                                         <p className="text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100">{museumData.openingHours.notes}</p>
+                                         <p className="text-sm text-gray-500 dark:text-white mt-3 pt-3 border-t border-gray-100">{museumData.openingHours.notes}</p>
                                     )}
                                 </div>
                             </div>
@@ -366,7 +366,7 @@ export function MuseumDetailsPage() {
                             {/* Ticket Information Card - Increased padding and spacing */}
                              <div className="bg-white shadow-md rounded-lg p-6">
                                 {/* Increased font size and margin */}
-                                <h2 className="text-lg font-semibold mb-4 flex items-center">
+                                <h2 className="text-lg font-semibold mb-4 flex items-center dark:text-orange-400">
                                     <FontAwesomeIcon icon={faIndianRupeeSign} className="mr-2.5 text-orange-500" />
                                     Ticket Information
                                 </h2>
@@ -380,16 +380,26 @@ export function MuseumDetailsPage() {
                                             return (
                                                 // Increased padding
                                                 <div key={key} className="flex justify-between py-1">
-                                                    <span className="text-gray-600">{formattedKey}</span>
-                                                    <span className="text-gray-800 font-medium">{formattedValue}</span>
+                                                    <span className="text-gray-600 dark:text-white">{formattedKey}</span>
+                                                    <span className="text-gray-800 dark:text-white font-medium">{formattedValue}</span>
                                                 </div>
                                             );
                                         })
                                     ) : (
-                                        <p className="text-gray-500">Ticket info not available.</p>
+                                        <p className="text-gray-500 dark:text-white">Ticket info not available.</p>
                                     )}
                                     {/* Increased button padding and font size */}
-                                    <button className="bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 text-base font-medium w-full mt-5">Book Tickets</button>
+                                    <Link 
+                                         to="/booking"
+                                         state={{ 
+                                             museumId: id, 
+                                             museumName: museumData?.name, 
+                                             ticketPrice: museumData?.ticketPrice 
+                                         }}
+                                         className="block w-full mt-5 bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 text-base font-medium text-center"
+                                     >
+                                         Book Tickets
+                                     </Link>
                                 </div>
                             </div>
                         </div>
