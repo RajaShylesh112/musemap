@@ -106,22 +106,14 @@ export function QuizPage() {
             });
 
             if (!res.ok) {
-                console.error('Fetch failed:', res.status, res.statusText);
-                if (res.status === 401) {
-                    console.error('401 Error: Unauthorized. Check your anon key and RLS policies.');
-                } else if (res.status === 406) {
-                    console.error('406 Error: Not Acceptable. Check your Accept header and Supabase configuration.');
-                }
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
             }
 
             const data = await res.json();
-            console.log('Fetch data:', data);
 
             if (!Array.isArray(data) || data.length === 0) {
-                console.error('Quiz data is not an array or is empty.');
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
@@ -130,7 +122,6 @@ export function QuizPage() {
             const quiz = data[0];
 
             if (!quiz || typeof quiz !== 'object' || quiz === null) {
-                console.error('Quiz data is not an object or is null.');
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
@@ -139,14 +130,12 @@ export function QuizPage() {
             if (quiz.questions && typeof quiz.questions === 'object' && quiz.questions !== null && quiz.questions.questions && Array.isArray(quiz.questions.questions)) {
                 quiz.questions = quiz.questions.questions;
             } else {
-                console.error('Quiz data is missing valid questions array');
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
             }
 
             if (!Array.isArray(quiz.questions) || quiz.questions.length === 0) {
-                console.error('Quiz data is missing valid questions array');
                 setQuizData(mockQuiz);
                 setQuizLoading(false);
                 return;
@@ -156,7 +145,6 @@ export function QuizPage() {
             setQuizLoading(false);
 
         } catch (error) {
-            console.error('Error fetching quiz:', error);
             setQuizData(mockQuiz);
             setQuizLoading(false);
         }
@@ -203,7 +191,6 @@ export function QuizPage() {
 
     const saveQuizResults = async (finalScore) => {
         if (!quizData || !quizData.id) {
-            console.error("Cannot save results: Quiz data or ID is missing.");
             return;
         }
 
@@ -218,16 +205,12 @@ export function QuizPage() {
                     completed_at: new Date()
                 };
 
-                console.log("Attempting to save quiz result:", resultData);
-
                 const { error } = await supabase
                     .from('quiz_results')
                     .insert([resultData]);
 
                 if (error) {
-                    console.error('Supabase error saving quiz results:', error.message, error.details);
                 } else {
-                    console.log("Quiz result saved successfully.");
                 }
 
                 if (quizData.rewards) {
@@ -239,7 +222,6 @@ export function QuizPage() {
                         awardBadge('bronze');
                     }
                 } else {
-                    console.warn("Quiz data is missing reward thresholds. Cannot award badges.");
                 }
 
                 let pointsToAdd = 0;
@@ -252,7 +234,6 @@ export function QuizPage() {
                 }
 
                 if (pointsToAdd > 0) {
-                    console.log(`Attempting to add ${pointsToAdd} points for user ${user.id}`);
 
                     const { error: rpcError } = await supabase.rpc('increment_user_points', {
                         auth_user_id: user.id,
@@ -260,25 +241,19 @@ export function QuizPage() {
                     });
 
                     if (rpcError) {
-                        console.error('Supabase RPC error incrementing points:', rpcError.message);
                     } else {
-                        console.log(`${pointsToAdd} points added successfully.`);
                     }
                 } else {
-                    console.log("No points awarded for this score.");
                 }
 
             } else {
-                console.log("User not logged in. Cannot save quiz results.");
             }
         } catch (error) {
-            console.error('Error in saveQuizResults function:', error);
         }
     };
 
     const awardBadge = async (level) => {
         if (!selectedMuseum) {
-            console.error("Cannot award badge: Museum ID is missing.");
             return;
         }
         try {
@@ -298,13 +273,10 @@ export function QuizPage() {
                     ]);
 
                 if (error) {
-                    console.error('Supabase error awarding badge:', error.message);
                     throw error;
                 };
-                console.log(`Badge awarded: ${level}`);
             }
         } catch (error) {
-            console.error('Error awarding badge:', error);
         }
     };
 

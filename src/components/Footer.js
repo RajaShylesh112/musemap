@@ -24,6 +24,7 @@ export function Footer() {
                         <a href="/privacy" className="text-gray-700 hover:text-orange-500 px-2 py-1 dark:text-orange-300 dark:hover:text-orange-400">Privacy Policy</a>
                         <a href="/terms" className="text-gray-700 hover:text-orange-500 px-2 py-1 dark:text-orange-300 dark:hover:text-orange-400">Terms of Service</a>
                         <a href="/about" className="text-gray-700 hover:text-orange-500 px-2 py-1 dark:text-orange-300 dark:hover:text-orange-400">About</a>
+                        <a href="/faq" className="text-gray-700 hover:text-orange-500 px-2 py-1 dark:text-orange-300 dark:hover:text-orange-400">FAQ</a>
                     </div>
                     <p className="text-gray-600 text-center text-sm sm:text-base dark:text-orange-200">&copy; 2025 MuseMap. All rights reserved.</p>
                 </div>

@@ -37,9 +37,9 @@ export function AuthCallbackPage() {
                 }
 
                 // Redirect based on role
-                navigate(profile.is_admin ? '/admin/dashboard' : '/dashboard');
+                navigate(profile.is_admin ? '/admin/dashboard' : '/dashboard'); // Or to the intended page after login
             } catch (error) {
-                console.error('Auth callback error:', error);
+                // console.error('Auth callback error:', error);
                 navigate('/login');
             }
         };
@@ -57,4 +57,4 @@ export function AuthCallbackPage() {
             </p>
         </div>
     );
-} 
+}

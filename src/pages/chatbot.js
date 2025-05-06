@@ -8,7 +8,6 @@ export function ChatbotPage() {
             content: 'Hello! I\'m your museum assistant. How can I help you today?',
             options: [
                 'View FAQs',
-                'Get Personalized Recommendations',
                 'Help with Booking',
                 'Information about Museums'
             ]
@@ -17,22 +16,102 @@ export function ChatbotPage() {
     const [inputMessage, setInputMessage] = useState('');
     const messagesEndRef = useRef(null);
 
-    const faqs = [
+    // Use the same FAQ structure as in faq.js
+    const faqCategories = [
         {
-            question: "What are the museum opening hours?",
-            answer: "Most museums are open from 9 AM to 5 PM, Tuesday through Sunday. Some museums may have extended hours on specific days."
+            category: "General Information",
+            items: [
+                {
+                    id: "gi1",
+                    question: "What is MuseMap?",
+                    answer: "MuseMap is a platform designed to help you discover and explore museums across India. You can find information about museums, book tickets, take quizzes to test your knowledge, and get recommendations."
+                },
+                {
+                    id: "gi2",
+                    question: "How can I contact customer support?",
+                    answer: "You can contact our customer support through the \"Contact Us\" page on our website or by emailing support@musemap.com. We typically respond within 24-48 hours."
+                },
+                {
+                    id: "gi3",
+                    question: "Is MuseMap available as a mobile app?",
+                    answer: "Currently, MuseMap is available as a web platform. We are working on developing mobile apps for Android and iOS in the near future."
+                }
+            ]
         },
         {
-            question: "How do I book tickets?",
-            answer: "You can book tickets through our website by selecting your preferred museum, date, and time slot. We also offer guided tours and audio guides as additional options."
+            category: "Booking & Tickets",
+            items: [
+                {
+                    id: "bt1",
+                    question: "How do I book a ticket online?",
+                    answer: "You can book tickets directly through our website. Navigate to the museum you wish to visit, select your preferred date and time slot, choose the number and type of tickets, and proceed to payment. You can also use our chatbot for assistance with booking."
+                },
+                {
+                    id: "bt2",
+                    question: "What payment methods are accepted?",
+                    answer: "We accept a wide range of payment methods, including major credit/debit cards (Visa, Mastercard, American Express), UPI (Google Pay, PhonePe, Paytm), and net banking from most major banks."
+                },
+                {
+                    id: "bt3",
+                    question: "Can I cancel or reschedule my ticket?",
+                    answer: "Yes, ticket cancellations and rescheduling are possible subject to the museum\'s specific policy. Generally, you can manage your bookings through your profile page or by contacting support at least 24 hours before your scheduled visit. Please check the terms and conditions at the time of booking for specific details."
+                },
+                {
+                    id: "bt4",
+                    question: "Are there any discounts or group booking options?",
+                    answer: "Yes, many museums offer discounts for students, seniors, and large groups. Please check the specific museum\'s page for details on available discounts and how to avail them. For group bookings (typically 10+ people), you might need to contact the museum directly or our support team for special arrangements."
+                },
+                {
+                    id: "bt5",
+                    question: "How will I receive my tickets after booking?",
+                    answer: "Once your booking is confirmed and payment is successful, you will receive your e-tickets via email and they will also be available in your MuseMap account under the 'My Bookings' section."
+                }
+            ]
         },
         {
-            question: "Are there any discounts available?",
-            answer: "Yes, we offer discounts for students, seniors, and children. Group bookings may also qualify for special rates."
+            category: "Account & Profile",
+            items: [
+                {
+                    id: "ap1",
+                    question: "How do I create an account?",
+                    answer: "You can create an account by clicking the \"Register\" or \"Sign Up\" button on our homepage. You\'ll need to provide your email address and create a password. Alternatively, you can sign up using your Google or Facebook account for a quicker process."
+                },
+                {
+                    id: "ap2",
+                    question: "I forgot my password. What should I do?",
+                    answer: "If you\'ve forgotten your password, click on the \"Forgot Password\" link on the login page. Enter your registered email address, and we\'ll send you instructions on how to reset your password."
+                },
+                {
+                    id: "ap3",
+                    question: "How can I update my profile information?",
+                    answer: "Once logged in, you can access your profile page by clicking on your name or profile icon. From there, you should find options to edit your personal details, contact information, and preferences."
+                },
+                {
+                    id: "ap4",
+                    question: "Is my personal information secure?",
+                    answer: "Yes, we take data security very seriously. Your personal information is encrypted and stored securely. Please refer to our Privacy Policy for more details on how we protect your data."
+                }
+            ]
         },
         {
-            question: "What's the cancellation policy?",
-            answer: "Bookings can be cancelled up to 24 hours before the scheduled visit for a full refund."
+            category: "Quizzes & Rewards",
+            items: [
+                {
+                    id: "qr1",
+                    question: "How do the quizzes work?",
+                    answer: "Our quizzes are designed to be a fun and interactive way to test your knowledge about Indian museums, art, history, and culture. Each quiz consists of multiple-choice questions. Your scores contribute to your profile and can unlock rewards."
+                },
+                {
+                    id: "qr2",
+                    question: "What are rewards and how can I earn them?",
+                    answer: "You can earn reward points and badges by actively participating on the MuseMap platform. This includes booking tickets, completing quizzes with high scores, and regularly visiting museums. Rewards can include discounts on future bookings, exclusive content, or special recognition on your profile. Check the \"Reward Criteria\" page for more details."
+                },
+                {
+                    id: "qr3",
+                    question: "Can I retake a quiz?",
+                    answer: "Yes, you can typically retake quizzes. However, there might be a limit on how frequently you can retake a specific quiz or how retakes affect your score for reward purposes. Specific rules will be mentioned with each quiz."
+                }
+            ]
         }
     ];
 
@@ -92,7 +171,6 @@ export function ChatbotPage() {
                 content: 'I\'m not sure I understand. Would you like to:',
                 options: [
                     'View FAQs',
-                    'Get Personalized Recommendations',
                     'Help with Booking',
                     'Information about Museums'
                 ]
@@ -100,32 +178,12 @@ export function ChatbotPage() {
         }
     };
 
-    const handleOptionClick = (option) => {
-        setMessages(prev => [...prev, { type: 'user', content: option }]);
-
-        switch (option) {
-            case 'View FAQs':
-                showFAQs();
-                break;
-            case 'Get Personalized Recommendations':
-                showRecommendations();
-                break;
-            case 'Help with Booking':
-                showBookingHelp();
-                break;
-            case 'Information about Museums':
-                showMuseumInfo();
-                break;
-            default:
-                break;
-        }
-    };
-
     const showFAQs = () => {
+        // Ask user to select a category first
         setMessages(prev => [...prev, {
             type: 'bot',
-            content: 'Here are some frequently asked questions:',
-            faqs: faqs
+            content: 'Please select an FAQ category:',
+            options: faqCategories.map(cat => cat.category) // Present categories as options
         }]);
     };
 
@@ -162,6 +220,46 @@ export function ChatbotPage() {
         }]);
     };
 
+    const handleOptionClick = (option) => {
+        setMessages(prev => [...prev, { type: 'user', content: option }]);
+
+        const selectedCategory = faqCategories.find(cat => cat.category === option);
+
+        if (selectedCategory) {
+            // User selected an FAQ category, show its items
+            setMessages(prev => [...prev, {
+                type: 'bot',
+                content: `Here are the FAQs for ${selectedCategory.category}:`,
+                faqs: selectedCategory.items // Pass only items of the selected category
+            }]);
+        } else {
+            // Handle other predefined options
+            switch (option) {
+                case 'View FAQs': // This case might be redundant if direct category selection is preferred
+                    showFAQs();
+                    break;
+                case 'Help with Booking':
+                    showBookingHelp();
+                    break;
+                case 'Information about Museums':
+                    showMuseumInfo();
+                    break;
+                default:
+                    // Default response if the option is not a known command or category
+                    setMessages(prev => [...prev, {
+                        type: 'bot',
+                        content: 'I\'m not sure how to help with that. Please choose from the main options or ask another question.',
+                        options: [
+                            'View FAQs',
+                            'Help with Booking',
+                            'Information about Museums'
+                        ]
+                    }]);
+                    break;
+            }
+        }
+    };
+
     const renderMessage = (message, index) => {
         const isBot = message.type === 'bot';
 
@@ -170,7 +268,7 @@ export function ChatbotPage() {
                 <div className={`p-4 rounded-lg ${isBot ? 'bg-white dark:bg-gray-700' : 'bg-orange-500 text-white'}`}>
                     <p className={`dark:text-white`}>{message.content}</p>
 
-                    {/* Options */}
+                    {/* Options (for category selection or main menu) */}
                     {message.options && (
                         <div className="mt-4 space-y-2">
                             {message.options.map((option, i) => (
@@ -185,13 +283,32 @@ export function ChatbotPage() {
                         </div>
                     )}
 
-                    {/* FAQs */}
-                    {message.faqs && (
-                        <div className="mt-4 space-y-4">
+                    {/* Display all FAQ Categories and their items (original full list - can be removed if not needed after category selection) */}
+                    {message.faqCategories && (
+                        <div className="mt-4 space-y-6">
+                            {message.faqCategories.map((categoryObj) => (
+                                <div key={categoryObj.category} className="mb-4">
+                                    <h3 className="text-lg font-semibold text-gray-700 dark:text-orange-400 mb-2">{categoryObj.category}</h3>
+                                    <div className="space-y-3">
+                                        {categoryObj.items.map((faq, i) => (
+                                            <div key={faq.id || i} className="border-b dark:border-gray-600 pb-2 last:border-b-0">
+                                                <h4 className="font-medium text-gray-800 dark:text-gray-100">{faq.question}</h4>
+                                                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">{faq.answer}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Display FAQs for a single selected category */}
+                    {message.faqs && !message.faqCategories && (
+                        <div className="mt-4 space-y-3">
                             {message.faqs.map((faq, i) => (
-                                <div key={i} className="border-b pb-2">
-                                    <h4 className="font-medium">{faq.question}</h4>
-                                    <p className={`text-gray-600 dark:text-white text-sm mt-1`}>{faq.answer}</p>
+                                <div key={faq.id || i} className="border-b dark:border-gray-600 pb-2 last:border-b-0">
+                                    <h4 className="font-medium text-gray-800 dark:text-gray-100">{faq.question}</h4>
+                                    <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">{faq.answer}</p>
                                 </div>
                             ))}
                         </div>
@@ -266,7 +383,7 @@ export function ChatbotPage() {
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                     {/* Chat Header */}
                     <div className="bg-orange-500 text-white p-4">
-                        <h2 className="text-xl font-semibold dark:text-orange-400">Museum Assistant</h2>
+                        <h2 className="text-xl font-semibold dark:text-yellow-400">Museum Assistant</h2>
                         <p className="text-sm opacity-75 dark:text-white">Ask me anything about our museums!</p>
                     </div>
 
@@ -298,4 +415,4 @@ export function ChatbotPage() {
             </div>
         </div>
     );
-} 
+}

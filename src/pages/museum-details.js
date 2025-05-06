@@ -12,7 +12,7 @@ class ErrorBoundary extends React.Component {
         this.state = { hasError: false };
     }
     static getDerivedStateFromError(error) { return { hasError: true }; }
-    componentDidCatch(error, errorInfo) { console.error("Caught error: ", error, errorInfo); }
+    componentDidCatch(error, errorInfo) { /* console.error("Caught error: ", error, errorInfo); */ }
     render() {
         if (this.state.hasError) {
             return <div className="p-4 text-red-600">Something went wrong displaying this part.</div>;
@@ -55,8 +55,6 @@ export function MuseumDetailsPage() {
 
             if (museumError) throw museumError;
             if (!museum) throw new Error("Museum not found");
-
-            console.log("Fetched Museum Data:", museum); // Keep for debugging
 
             setMuseumData({
                 ...museum,
@@ -286,7 +284,7 @@ export function MuseumDetailsPage() {
                                                 };
 
                                                 // --- Add this log ---
-                                                console.log("Checking exhibition status:", exhibition.status);
+                                                // console.log("Checking exhibition status:", exhibition.status);
                                                 // --------------------
 
                                                 // Determine badge color based on status
@@ -389,17 +387,12 @@ export function MuseumDetailsPage() {
                                         <p className="text-gray-500 dark:text-white">Ticket info not available.</p>
                                     )}
                                     {/* Increased button padding and font size */}
-                                    <Link 
-                                         to="/booking"
-                                         state={{ 
-                                             museumId: id, 
-                                             museumName: museumData?.name, 
-                                             ticketPrice: museumData?.ticketPrice 
-                                         }}
-                                         className="block w-full mt-5 bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 text-base font-medium text-center"
-                                     >
-                                         Book Tickets
-                                     </Link>
+                                    <button
+                                        onClick={() => navigate(`/booking/${id}`)}
+                                        className="block w-full mt-5 bg-orange-500 text-white px-4 py-2.5 rounded-lg hover:bg-orange-600 text-base font-medium text-center"
+                                    >
+                                        Book Tickets
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -17,7 +17,6 @@ export function DashboardPage() {
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (userError) throw userError;
                 if (!user) {
-                    console.log("No user logged in.");
                     setLoading(false);
                     return;
                 }
@@ -29,7 +28,6 @@ export function DashboardPage() {
                     .single();
 
                 if (profileError) {
-                    console.warn("Could not fetch profile:", profileError.message);
                     setProfile({
                         name: user.user_metadata?.name || 'User',
                         email: user.email,
@@ -49,7 +47,6 @@ export function DashboardPage() {
                 ]);
 
             } catch (err) {
-                console.error("Error fetching dashboard data:", err);
                 setError(err.message || "Failed to load dashboard data.");
                 setProfile(null);
             } finally {
@@ -70,7 +67,6 @@ export function DashboardPage() {
             .limit(5);
 
         if (error) {
-            console.error("Error fetching bookings:", error);
             setBookings([]);
         } else {
             const formattedBookings = data.map(b => ({
@@ -103,7 +99,6 @@ export function DashboardPage() {
             setQuizHistory(formattedHistory);
 
         } catch (error) {
-            console.error("Error fetching quiz history:", error);
             setQuizHistory([]);
         }
     };

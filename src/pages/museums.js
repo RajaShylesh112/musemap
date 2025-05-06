@@ -28,7 +28,7 @@ export function MuseumsPage() {
             if (error) throw error;
             setMuseums(data);
         } catch (error) {
-            console.error('Error fetching museums:', error);
+            // console.error('Error fetching museums:', error);
         } finally {
             setLoading(false);
         }
@@ -50,12 +50,12 @@ export function MuseumsPage() {
             museum.name.toLowerCase().includes(filters.location.toLowerCase());
         
         // Debugging logs
-        console.log('Filtering museum:', {
-            name: museum.name,
-            location: museum.location,
-            matchesSearch,
-            matchesLocation
-        });
+        // console.log('Filtering museum:', {
+        //     name: museum.name,
+        //     location: museum.location,
+        //     matchesSearch,
+        //     matchesLocation
+        // });
         
         return matchesSearch && matchesLocation;
     });
