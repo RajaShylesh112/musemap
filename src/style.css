@@ -190,6 +190,22 @@ body {
   .dark .border-orange-500 { border-color: #fdba74; }
 }
 
+/* Ensure Material Icons font is always applied */
+.material-icons {
+  font-family: 'Material Icons' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
 /* Mobile-specific styles */
 @media (max-width: 768px) {
   .navbar {

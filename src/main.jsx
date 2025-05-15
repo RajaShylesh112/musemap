@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './components/Layout';
+import Layout from './components/Layout'; // your layout with navbar/footer
 import { HomePage } from './pages/home';
 import { BookingPage } from './pages/booking';
 import { ChatbotPage } from './pages/chatbot';
@@ -77,91 +77,43 @@ if (container) {
     root.render(
       <React.StrictMode>
         <Router>
-          <Layout>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/museums" element={<MuseumsPage />} />
-              <Route path="/museums/:id" element={<MuseumDetailsPage />} />
-              <Route path="/faq" element={<FAQPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/quiz" element={<QuizPage />} />
+          <Routes>
+            {/* Admin and Owner Dashboard: NO Layout */}
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>} />
+            <Route path="/admin/quiz/create" element={<ProtectedRoute requireAdmin><QuizCreatePage /></ProtectedRoute>} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminDashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/booking/:id" // Ensure :id is part of the path
-                element={
-                  <ProtectedRoute>
-                    <BookingPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/payment"
-                element={
-                  <ProtectedRoute>
-                    <PaymentPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chatbot"
-                element={
-                  <ProtectedRoute>
-                    <ChatbotPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/rewards"
-                element={
-                  <ProtectedRoute>
-                    <RewardCriteriaPage />
-                  </ProtectedRoute>
-                }
-              />
+            {/* All other pages: WITH Layout */}
+            <Route
+              path="*"
+              element={
+                <Layout>
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/search" element={<SearchPage />} />
+                    <Route path="/museums" element={<MuseumsPage />} />
+                    <Route path="/museums/:id" element={<MuseumDetailsPage />} />
+                    <Route path="/faq" element={<FAQPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/quiz" element={<QuizPage />} />
 
-              {/* Admin Routes */}
-              <Route
-                path="/admin/quiz/create"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <QuizCreatePage />
-                  </ProtectedRoute>
-                }
-              />
+                    {/* Protected Routes */}
+                    <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+                    <Route path="/booking/:id" element={<ProtectedRoute><BookingPage /></ProtectedRoute>} />
+                    <Route path="/payment" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+                    <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
+                    <Route path="/rewards" element={<ProtectedRoute><RewardCriteriaPage /></ProtectedRoute>} />
 
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Layout>
+                    {/* Catch all route */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Layout>
+              }
+            />
+          </Routes>
         </Router>
       </React.StrictMode>
     );
