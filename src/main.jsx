@@ -17,7 +17,7 @@ import { QuizPage } from './pages/quiz';
 import { LoginPage } from './pages/login';
 import { RegisterPage } from './pages/register';
 import { DashboardPage } from './pages/dashboard';
-import { AdminDashboardPage } from './pages/admin/dashboard';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { ProfilePage } from './pages/profile';
 import { getSupabase } from './supabase';
 import './style.css';
