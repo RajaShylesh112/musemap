@@ -14,10 +14,5 @@ export default defineConfig({
         '.js': 'jsx'
       }
     }
-  },
-  build: {
-    rollupOptions: {
-      external: ['lucide-react']
-    }
   }
 })
