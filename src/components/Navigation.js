@@ -43,7 +43,7 @@ export function Navigation() {
         await supabase.auth.signOut();
         setIsLoggedIn(false);
         setIsAdmin(false);
-        navigate('/');
+        navigate(isAdmin ? '/admin/dashboard' : '/dashboard');
     };
 
     const toggleMenu = () => {

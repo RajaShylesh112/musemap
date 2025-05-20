@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // <-- import useNavigate
 import { AdminDashboardPage } from './admin/AdminDashboardPage';
 import { OwnerDashboardPage } from './admin/OwnerDashboardPage';
 import { UserDashboard } from './UserDashboard';
@@ -14,6 +14,7 @@ export function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [adminRequests, setAdminRequests] = useState([]);
+    const navigate = useNavigate(); // <-- initialize navigate
 
     useEffect(() => {
         const fetchData = async () => {
@@ -76,6 +77,12 @@ export function DashboardPage() {
 
         fetchData();
     }, []);
+
+    useEffect(() => {
+        if (role === 'admin') {
+            navigate('/admin/dashboard', { replace: true });
+        }
+    }, [role, navigate]);
 
     const fetchBookings = async (userId) => {
         const { data, error } = await supabase
@@ -176,9 +183,7 @@ export function DashboardPage() {
             />
         );
     }
-    if (role === 'admin') {
-        return <AdminDashboardPage />;
-    }
+    // Remove direct rendering of AdminDashboardPage here
     if (!profile) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">

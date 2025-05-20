@@ -150,11 +150,12 @@ export function MuseumsPage() {
                                         >
                                             View Details
                                         </Link>
-                                        <span className="text-gray-500 dark:text-orange-200">
-                                            {museum.ticket_price && typeof museum.ticket_price === 'object' && museum.ticket_price.indian_nationals !== undefined
-                                                ? `From ₹${museum.ticket_price.indian_nationals}`
-                                                : 'Price Varies'}
-                                        </span>
+                                        <Link
+                                            to={`/booking/${museum.id}`}
+                                            className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 rounded transition-colors dark:bg-orange-400 dark:hover:bg-orange-300 dark:text-gray-900"
+                                        >
+                                            Book Tickets
+                                        </Link>
                                     </div>
                                 </div>
                             </div>

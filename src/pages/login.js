@@ -34,7 +34,13 @@ export function LoginPage() {
 
             if (error) throw error;
 
-            navigate('/dashboard');
+            // Check if user is admin and redirect accordingly
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.user_metadata && user.user_metadata.isAdmin) {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
         } catch (error) {
             setError(error.message);
         } finally {

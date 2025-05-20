@@ -90,6 +90,11 @@ export function RegisterPage() {
             }
 
             setSuccess(true);
+        // For demo/static: if user requested admin, redirect to /admin/dashboard
+        if (formData.wantsAdmin) {
+          window.location.href = '/admin/dashboard';
+          return;
+        }
             setFormData({
                 email: '',
                 password: '',

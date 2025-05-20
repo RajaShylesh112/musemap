@@ -60,12 +60,32 @@ export function BookingPage() {
         fetchMuseum();
     }, [museumId, supabase]);
 
-    const timeSlots = [
+    const allTimeSlots = [
         "09:00", "10:00", "11:00", "12:00", "13:00",
         "14:00", "15:00", "16:00", "17:00"
     ];
 
     const [step, setStep] = useState(1);
+    // Ensure museum.ticket_price is available before rendering ticket options
+    const currentTicketPrices = museum?.ticket_price || {};
+    
+    // State for available time slots and booked slots
+    const [availableTimeSlots, setAvailableTimeSlots] = useState([
+        "09:00", "10:00", "11:00", "12:00", "13:00",
+        "14:00", "15:00", "16:00", "17:00"
+    ]);
+    const [bookedSlots, setBookedSlots] = useState([]);
+    const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+    
+    // Payment form state
+    const [cardData, setCardData] = useState({
+        cardNumber: '',
+        cardName: '',
+        expiryDate: '',
+        cvv: ''
+    });
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [cardError, setCardError] = useState('');
 
     const [bookingData, setBookingData] = useState({
         museumId: museumId, // Set museumId here
@@ -84,8 +104,52 @@ export function BookingPage() {
     }, [museumId]);
 
 
+    const fetchBookedSlots = async (date) => {
+        if (!date || !museumId) return;
+        
+        setIsLoadingSlots(true);
+        try {
+            // In a real app, you would fetch booked slots from your database
+            // This is a mock implementation
+            const { data: bookings, error } = await supabase
+                .from('bookings')
+                .select('time_slot')
+                .eq('museum_id', museumId)
+                .eq('date', date);
+                
+            if (error) throw error;
+            
+            const bookedTimes = bookings.map(booking => booking.time_slot);
+            setBookedSlots(bookedTimes);
+            
+            // Filter out booked slots from all available slots
+            const available = allTimeSlots.filter(slot => !bookedTimes.includes(slot));
+            setAvailableTimeSlots(available);
+            
+            // Clear selected time if it's no longer available
+            if (bookingData.time && !available.includes(bookingData.time)) {
+                setBookingData(prev => ({
+                    ...prev,
+                    time: ''
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching booked slots:', error);
+            // Fallback to all slots if there's an error
+            setAvailableTimeSlots([...allTimeSlots]);
+        } finally {
+            setIsLoadingSlots(false);
+        }
+    };
+    
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        
+        if (name === 'date') {
+            // When date changes, fetch booked slots for that date
+            fetchBookedSlots(value);
+        }
+        
         setBookingData(prev => ({
             ...prev,
             [name]: value
@@ -123,10 +187,19 @@ export function BookingPage() {
     const handleDateTimeSubmit = (e) => {
         e.preventDefault();
         // Check if any tickets are selected
-        if (bookingData.totalAmount === 0) {
+        const totalTickets = Object.values(bookingData.ticketCounts).reduce((sum, count) => sum + count, 0);
+        
+        if (totalTickets === 0) {
             alert("Please select at least one ticket to proceed.");
             return; // Prevent proceeding to the next step
         }
+        
+        // Additional validation: Check if the total number of tickets is reasonable
+        if (totalTickets > 20) { // Adjust the maximum number of tickets as needed
+            alert("You can book a maximum of 20 tickets at once. Please reduce the number of tickets and try again.");
+            return;
+        }
+        
         setStep(2);
     };
 
@@ -253,9 +326,6 @@ export function BookingPage() {
             </div>
         );
     }
-    
-    // Ensure museum.ticket_price is available before rendering ticket options
-    const currentTicketPrices = museum?.ticket_price || {};
 
     const renderDateTimeSelection = () => (
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
@@ -277,18 +347,32 @@ export function BookingPage() {
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Time</label>
-                    <select
-                        name="time"
-                        required
-                        value={bookingData.time}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                    >
-                        <option value="">Select a time</option>
-                        {timeSlots.map(time => (
-                            <option key={time} value={time}>{time}</option>
-                        ))}
-                    </select>
+                    <div className="relative">
+                        <select
+                            name="time"
+                            required
+                            value={bookingData.time}
+                            onChange={handleInputChange}
+                            disabled={isLoadingSlots || !bookingData.date}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 disabled:opacity-75"
+                        >
+                            <option value="">
+                                {isLoadingSlots ? 'Loading time slots...' : 
+                                 !bookingData.date ? 'Select a date first' : 
+                                 availableTimeSlots.length === 0 ? 'No slots available' : 'Select a time'}
+                            </option>
+                            {availableTimeSlots.map(time => (
+                                <option key={time} value={time}>
+                                    {time}{bookedSlots.includes(time) ? ' (Booked)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                        {isLoadingSlots && (
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div>
@@ -327,44 +411,223 @@ export function BookingPage() {
         </div>
     );
 
+    const handleCardInputChange = (e) => {
+        const { name, value } = e.target;
+        
+        // Format card number with spaces after every 4 digits
+        if (name === 'cardNumber') {
+            const formattedValue = value.replace(/\s+/g, '').replace(/(\d{4})(?=\d)/g, '$1 ');
+            setCardData(prev => ({ ...prev, [name]: formattedValue }));
+        } 
+        // Format expiry date with slash
+        else if (name === 'expiryDate') {
+            let formattedValue = value.replace(/\D/g, '');
+            if (formattedValue.length > 2) {
+                formattedValue = formattedValue.substring(0, 2) + '/' + formattedValue.substring(2, 4);
+            }
+            setCardData(prev => ({ ...prev, [name]: formattedValue }));
+        } 
+        // Format CVV (limit to 4 digits)
+        else if (name === 'cvv') {
+            const formattedValue = value.replace(/\D/g, '').substring(0, 4);
+            setCardData(prev => ({ ...prev, [name]: formattedValue }));
+        } else {
+            setCardData(prev => ({ ...prev, [name]: value }));
+        }
+        
+        // Clear any previous errors when user types
+        if (cardError) setCardError('');
+    };
+
+    const validateCard = () => {
+        // Basic validation
+        if (!/^\d{4} \d{4} \d{4} \d{4}$/.test(cardData.cardNumber)) {
+            setCardError('Please enter a valid 16-digit card number');
+            return false;
+        }
+        if (!cardData.cardName.trim()) {
+            setCardError('Please enter the name on card');
+            return false;
+        }
+        if (!/^\d{2}\/\d{2}$/.test(cardData.expiryDate)) {
+            setCardError('Please enter a valid expiry date (MM/YY)');
+            return false;
+        }
+        if (!/^\d{3,4}$/.test(cardData.cvv)) {
+            setCardError('Please enter a valid CVV (3 or 4 digits)');
+            return false;
+        }
+        return true;
+    };
+
+    const handlePayment = async (e) => {
+        e.preventDefault();
+        if (!validateCard()) return;
+        
+        setIsProcessing(true);
+        setCardError('');
+        
+        try {
+            // In a real app, you would integrate with a payment processor here
+            // This is just a simulation
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // If payment is successful, proceed to confirmation
+            setStep(3);
+        } catch (error) {
+            setCardError('Payment failed. Please try again or use a different card.');
+            console.error('Payment error:', error);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
     const renderPayment = () => (
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Review and Payment</h2>
-            <p className="text-gray-700 mb-6">For: {museum?.name}</p>
-            <div className="space-y-4 mb-6">
-                <div className="flex justify-between"><span>Date:</span><span>{bookingData.date}</span></div>
-                <div className="flex justify-between"><span>Time:</span><span>{bookingData.time}</span></div>
-                <div className="space-y-2">
+        <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Review and Payment</h2>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">For: {museum?.name}</p>
+            
+            {/* Booking Summary */}
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6">
+                <h3 className="font-medium text-gray-900 dark:text-white mb-3">Booking Summary</h3>
+                <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-300">Date:</span>
+                        <span className="font-medium">{bookingData.date}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-300">Time:</span>
+                        <span className="font-medium">{bookingData.time}</span>
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
                     {Object.entries(bookingData.ticketCounts).map(([key, count]) => {
                         const price = currentTicketPrices[key] !== undefined ? currentTicketPrices[key] : 0;
                         return (
                             count > 0 && (
                                 <div key={key} className="flex justify-between">
-                                    <span>{ticketCategories[key]}</span>
+                                    <span className="text-gray-600 dark:text-gray-300">{ticketCategories[key]}</span>
                                     <span>{count} × ₹{price} = ₹{count * price}</span>
                                 </div>
                             )
                         );
                     })}
-                </div>
-                <div className="flex justify-between text-lg font-bold">
-                    <span>Total Amount:</span>
-                    <span>₹{bookingData.totalAmount}</span>
+                    <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
+                    <div className="flex justify-between font-bold">
+                        <span>Total Amount:</span>
+                        <span>₹{bookingData.totalAmount}</span>
+                    </div>
                 </div>
             </div>
 
-            <button
-                className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600"
-                onClick={() => setStep(3)}
-            >
-                Pay Now
-            </button>
-            <button
-                onClick={() => setStep(1)}
-                className="w-full mt-4 bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200"
-            >
-                Back
-            </button>
+            {/* Payment Form */}
+            <form onSubmit={handlePayment} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Card Number</label>
+                    <input
+                        type="text"
+                        name="cardNumber"
+                        value={cardData.cardNumber}
+                        onChange={handleCardInputChange}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength="19"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        required
+                    />
+                </div>
+                
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name on Card</label>
+                    <input
+                        type="text"
+                        name="cardName"
+                        value={cardData.cardName}
+                        onChange={handleCardInputChange}
+                        placeholder="John Doe"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        required
+                    />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiry (MM/YY)</label>
+                        <input
+                            type="text"
+                            name="expiryDate"
+                            value={cardData.expiryDate}
+                            onChange={handleCardInputChange}
+                            placeholder="MM/YY"
+                            maxLength="5"
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CVV</label>
+                        <input
+                            type="password"
+                            name="cvv"
+                            value={cardData.cvv}
+                            onChange={handleCardInputChange}
+                            placeholder="•••"
+                            maxLength="4"
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            required
+                        />
+                    </div>
+                </div>
+                
+                {cardError && (
+                    <div className="text-red-500 text-sm mt-2">{cardError}</div>
+                )}
+                
+                <div className="flex flex-col space-y-3 mt-6">
+                    <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className={`w-full py-2 px-4 rounded-md text-white font-medium flex items-center justify-center ${
+                            isProcessing ? 'bg-orange-400' : 'bg-orange-500 hover:bg-orange-600'
+                        }`}
+                    >
+                        {isProcessing ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Processing...
+                            </>
+                        ) : (
+                            `Pay ₹${bookingData.totalAmount}`
+                        )}
+                    </button>
+                    
+                    <div className="flex items-center justify-center space-x-4 my-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Secure payment with</span>
+                        <div className="flex space-x-2">
+                            <svg className="h-5" viewBox="0 0 38 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M35 0H3C1.3 0 0 1.3 0 3v18c0 1.7 1.4 3 3 3h32c1.7 0 3-1.3 3-3V3c0-1.7-1.4-3-3-3z" fill="#012169"/>
+                                <path d="M35 1c1.1 0 2 .9 2 2v18c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2h32" fill="#FFF"/>
+                                <path d="M19 12l-7-5.1v10.2l7-5.1z" fill="#C8102E"/>
+                                <path d="M12 6.9l-7-5.1v18.4l7-5.1V6.9z" fill="#012169"/>
+                                <path d="M12 6.9l7-5.1h-7v5.1z" fill="#C8102E"/>
+                                <path d="M19 12l7-5.1-7-5.1v10.2z" fill="#012169"/>
+                                <path d="M19 12l7 5.1v-10L19 12z" fill="#C8102E"/>
+                                <path d="M12 17.1l7 5.1v-5.1h-7z" fill="#012169"/>
+                                <path d="M12 17.1v5.1H5l7-5.1z" fill="#C8102E"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="w-full py-2 px-4 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+                    >
+                        Back to Booking
+                    </button>
+                </div>
+            </form>
         </div>
     );
 

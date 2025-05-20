@@ -9,7 +9,7 @@ import { MuseumDetailsPage } from './pages/museum-details';
 import { PaymentPage } from './pages/payment';
 import { FAQPage } from './pages/faq';
 import { ContactPage } from './pages/contact';
-import { QuizCreatePage } from './pages/quiz-create';
+
 import { RewardCriteriaPage } from './pages/reward-criteria';
 import { SearchPage } from './pages/search';
 import { MuseumsPage } from './pages/museums';
@@ -18,6 +18,16 @@ import { LoginPage } from './pages/login';
 import { RegisterPage } from './pages/register';
 import { DashboardPage } from './pages/dashboard';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import AdminMuseumDetailsPage from './pages/admin/MuseumDetailsPage';
+import ExhibitionsPage from './pages/admin/ExhibitionsPage';
+import ArtifactsPage from './pages/admin/ArtifactsPage';
+import QuizzesPage from './pages/admin/QuizzesPage';
+import QuizCreatePage from './pages/admin/QuizCreatePage';
+import QuizEditPage from './pages/admin/QuizEditPage';
+import ExhibitionCreatePage from './pages/admin/ExhibitionCreatePage';
+import ExhibitionEditPage from './pages/admin/ExhibitionEditPage';
+import ArtifactCreatePage from './pages/admin/ArtifactCreatePage';
+import AdminLayout from './pages/admin/AdminLayout';
 import { ProfilePage } from './pages/profile';
 import { getSupabase } from './supabase';
 import './style.css';
@@ -60,9 +70,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
         return <Navigate to="/login" />;
     }
 
-    if (requireAdmin && !user.user_metadata?.isAdmin) {
-        return <Navigate to="/dashboard" />;
-    }
+
 
     return children;
 }
@@ -78,9 +86,30 @@ if (container) {
       <React.StrictMode>
         <Router>
           <Routes>
-            {/* Admin and Owner Dashboard: NO Layout */}
+            {/* Admin Section: All admin pages with sidebar and light mode */}
+            <Route path="/admin/*" element={
+              <ProtectedRoute requireAdmin>
+                <AdminLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<AdminDashboardPage />} />
+                    <Route path="museum-details" element={<AdminMuseumDetailsPage />} />
+<Route path="museum" element={<AdminMuseumDetailsPage />} />
+                    <Route path="exhibitions" element={<ExhibitionsPage />} />
+                    <Route path="exhibitions/new" element={<ExhibitionCreatePage />} />
+                    <Route path="exhibitions/edit/:idx" element={<ExhibitionEditPage />} />
+                    <Route path="artifacts" element={<ArtifactsPage />} />
+                    <Route path="artifacts/new" element={<ArtifactCreatePage />} />
+                    <Route path="quizzes" element={<QuizzesPage />} />
+                    <Route path="quizzes/new" element={<QuizCreatePage />} />
+                    <Route path="quizzes/edit/:idx" element={<QuizEditPage />} />
+                    <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                  </Routes>
+                </AdminLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* Owner/User Dashboard: NO Layout */}
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>} />
             <Route path="/admin/quiz/create" element={<ProtectedRoute requireAdmin><QuizCreatePage /></ProtectedRoute>} />
 
             {/* All other pages: WITH Layout */}
