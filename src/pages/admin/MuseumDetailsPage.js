@@ -163,6 +163,7 @@ const MuseumDetailsPage = () => {
         responseData = data;
         responseError = error;
       } else { // Create Mode
+        console.log("Attempting to create museum with payload:", JSON.stringify(museumPayload, null, 2)); // Added logging
         const { data, error } = await supabase
           .from('museums')
           .insert([museumPayload])
