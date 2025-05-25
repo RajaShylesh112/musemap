@@ -27,6 +27,7 @@ import QuizEditPage from './pages/admin/QuizEditPage';
 import ExhibitionCreatePage from './pages/admin/ExhibitionCreatePage';
 import ExhibitionEditPage from './pages/admin/ExhibitionEditPage';
 import ArtifactCreatePage from './pages/admin/ArtifactCreatePage';
+import ArtifactEditPage from './pages/admin/ArtifactEditPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import { ProfilePage } from './pages/profile';
 import { getSupabase } from './supabase';
@@ -93,15 +94,16 @@ if (container) {
                   <Routes>
                     <Route path="dashboard" element={<AdminDashboardPage />} />
                     <Route path="museum-details" element={<AdminMuseumDetailsPage />} />
-<Route path="museum" element={<AdminMuseumDetailsPage />} />
+                    <Route path="museum" element={<AdminMuseumDetailsPage />} />
                     <Route path="exhibitions" element={<ExhibitionsPage />} />
                     <Route path="exhibitions/new" element={<ExhibitionCreatePage />} />
-                    <Route path="exhibitions/edit/:idx" element={<ExhibitionEditPage />} />
+                    <Route path="exhibitions/edit/:exhibitionId" element={<ExhibitionEditPage />} /> 
                     <Route path="artifacts" element={<ArtifactsPage />} />
                     <Route path="artifacts/new" element={<ArtifactCreatePage />} />
+                    <Route path="artifacts/edit/:artifactId" element={<ArtifactEditPage />} /> {/* Add new route */}
                     <Route path="quizzes" element={<QuizzesPage />} />
                     <Route path="quizzes/new" element={<QuizCreatePage />} />
-                    <Route path="quizzes/edit/:idx" element={<QuizEditPage />} />
+                    <Route path="quizzes/edit/:quizId" element={<QuizEditPage />} /> 
                     <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                   </Routes>
                 </AdminLayout>
