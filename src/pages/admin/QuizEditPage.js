@@ -289,30 +289,30 @@ const QuizEditPage = () => {
         )}
 
         <form onSubmit={handleSave} className="space-y-6">
-         <fieldset className="space-y-6" disabled={isSaving || (notFound && !!quizId) || (!quizId && quiz.title === dummyQuizData.title) }> {/* Added space-y-6 to fieldset for consistency */}
+         <fieldset className="space-y-6" disabled={isSaving || (notFound && !!quizId) || (!quizId && quiz.title === dummyQuizData.title) }>
             {/* Quiz Title */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label> {/* Standardized label */}
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
               <input
                 id="title"
                 name="title"
                 type="text"
                 value={quiz.title || ""}
                 onChange={handleChange}
-                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" {/* Consistent input style */}
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
                 required
               />
             </div>
 
             {/* Museum Selection */}
             <div>
-              <label htmlFor="museum_id" className="block text-sm font-medium text-gray-700 mb-1">Museum</label> {/* Standardized label */}
+              <label htmlFor="museum_id" className="block text-sm font-medium text-gray-700 mb-1">Museum</label>
               <select
                 id="museum_id"
                 name="museum_id"
                 value={quiz.museum_id || ""}
                 onChange={handleChange}
-                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" {/* Consistent input style */}
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
                 required
               >
                 <option value="">Select a Museum</option>
@@ -344,7 +344,7 @@ const QuizEditPage = () => {
                     value={q.question_text || ""}
                     onChange={(e) => handleQuestionChange(index, "question_text", e.target.value)}
                     placeholder="Enter question text"
-                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white" /* Standardized input style */
+                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white"
                     rows="2"
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -359,7 +359,7 @@ const QuizEditPage = () => {
                           value={opt || ""}
                           onChange={(e) => handleQuestionChange(index, `option-${optIndex}`, e.target.value)}
                           placeholder={`Option ${optIndex + 1}`}
-                          className="w-full rounded-md px-2 py-1 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm" /* Standardized input style */
+                          className="w-full rounded-md px-2 py-1 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm"
                         />
                       </div>
                     ))}
@@ -372,7 +372,7 @@ const QuizEditPage = () => {
                       id={`correct_answer_index-${index}`}
                       value={q.correct_answer_index}
                       onChange={(e) => handleQuestionChange(index, "correct_answer_index", parseInt(e.target.value, 10))}
-                      className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm" /* Standardized input style */
+                      className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm"
                     >
                       {q.options.map((_, optIndex) => (
                         <option key={optIndex} value={optIndex}>Option {optIndex + 1}</option>
@@ -403,7 +403,7 @@ const QuizEditPage = () => {
                     name="points"
                     value={quiz.rewards.points || 0}
                     onChange={handleRewardChange}
-                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Standardized input style */
+                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
                   />
                 </div>
                 <div>
@@ -415,7 +415,7 @@ const QuizEditPage = () => {
                     value={quiz.rewards.badge_name || ""}
                     onChange={handleRewardChange}
                     placeholder="e.g., History Buff"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
                   />
                 </div>
               </div>
