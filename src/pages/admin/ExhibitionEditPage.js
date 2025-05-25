@@ -3,13 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSupabase } from "../../supabase"; 
 
 const dummyExhibitionData = {
-  title: "Dummy Exhibition Title",
-  museum_id: "", // This might be pre-filled if context allows, or selected
+  title: "Sample Exhibition Title",
+  museum_id: "", 
   start_date: "2024-01-01",
   end_date: "2024-03-31",
-  description: "This is a detailed description for the dummy exhibition. It highlights the key aspects and themes that will be explored, inviting visitors to delve into a rich historical or artistic narrative.",
+  description: "Enter a detailed description for the exhibition. Highlight key aspects and themes to be explored.",
   status: "upcoming",
-  image_url: "https://via.placeholder.com/300x200.png?text=Dummy+Exhibition"
 };
 
 const ExhibitionEditPage = () => {
@@ -18,7 +17,7 @@ const ExhibitionEditPage = () => {
   const [museums, setMuseums] = useState([]); 
   
   const initialFormState = exhibitionId ? 
-    { title: "", museum_id: "", start_date: "", end_date: "", description: "", status: "upcoming", image_url:"" } : 
+    { title: "", museum_id: "", start_date: "", end_date: "", description: "", status: "upcoming" } : // Removed image_url
     dummyExhibitionData;
   
   const [exhibition, setExhibition] = useState(initialFormState);
@@ -87,7 +86,7 @@ const ExhibitionEditPage = () => {
             ...exhibitionDataResult,
             start_date: exhibitionDataResult.start_date || "",
             end_date: exhibitionDataResult.end_date || "",
-            image_url: exhibitionDataResult.image_url || "",
+            // image_url: exhibitionDataResult.image_url || "", // Removed image_url
           });
         }
       } catch (err) { 
@@ -150,7 +149,7 @@ const ExhibitionEditPage = () => {
           end_date: exhibition.end_date,
           description: exhibition.description,
           status: exhibition.status,
-          image_url: exhibition.image_url, 
+          // image_url: exhibition.image_url, // Removed image_url
         })
         .eq("id", exhibitionId)
         .select();
@@ -179,12 +178,12 @@ const ExhibitionEditPage = () => {
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen text-gray-900">
       <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-6 md:p-8">
         <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-orange-600">
-            {exhibitionId ? "Edit Exhibition" : "Exhibition Details (Preview with Dummy Data)"}
+            {exhibitionId ? "Edit Exhibition" : "Exhibition Details (Sample Preview)"}
         </h2>
         
         {error && <div className="mb-4 p-3 rounded-md text-sm bg-red-100 text-red-700">Error: {error}</div>}
-        {notFound && exhibitionId && <div className="mb-4 p-3 rounded-md text-sm bg-yellow-100 text-yellow-700">Exhibition with ID '{exhibitionId}' not found. Displaying dummy data for reference. Fields will be read-only.</div>}
-        {!exhibitionId && <div className="mb-4 p-3 rounded-md text-sm bg-blue-100 text-blue-700">Displaying dummy data for UI development. No actual record is being edited.</div>}
+        {notFound && exhibitionId && <div className="mb-4 p-3 rounded-md text-sm bg-yellow-100 text-yellow-700">Exhibition with ID '{exhibitionId}' not found. Displaying sample data for reference. Fields will be read-only.</div>}
+        {!exhibitionId && <div className="mb-4 p-3 rounded-md text-sm bg-blue-100 text-blue-700">Displaying sample data for UI preview. No actual record is being edited.</div>}
 
 
         {formMessage && (
@@ -258,18 +257,7 @@ const ExhibitionEditPage = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
               />
             </div>
-            <div>
-              <label htmlFor="image_url" className="block mb-1 font-semibold text-gray-700">Image URL</label>
-              <input
-                id="image_url"
-                name="image_url" // Ensure name attribute is present for handleChange
-                type="url"
-                value={exhibition.image_url || ""}
-                onChange={e => handleChange("image_url", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
+            {/* Image URL field removed from UI */}
 
             <div>
               <label htmlFor="status" className="block mb-1 font-semibold text-gray-700">Status</label>
@@ -300,7 +288,7 @@ const ExhibitionEditPage = () => {
                 className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-50"
                 disabled={isSaving || (notFound && !!exhibitionId) || (!exhibitionId && exhibition.title === dummyExhibitionData.title) }
               >
-                {isSaving ? "Saving..." : (exhibitionId ? "Save Changes" : "Create (Dummy - Not Savable)")}
+                {isSaving ? "Saving..." : (exhibitionId ? "Save Changes" : "Preview (Not Savable)")}
               </button>
             </div>
           </fieldset>

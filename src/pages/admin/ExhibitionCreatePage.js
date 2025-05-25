@@ -8,7 +8,7 @@ const initialExhibitionState = {
   end_date: "",
   status: "upcoming", // Default status matching schema
   description: "",
-  image_url: "", // Assuming image_url for consistency
+  // image_url: "", // Removed image_url
   museum_id: null,
 };
 
@@ -185,18 +185,7 @@ const ExhibitionCreatePage = () => {
                 rows={3} 
               />
             </div>
-             <div>
-              <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-              <input 
-                id="image_url"
-                name="image_url"
-                type="url"
-                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" 
-                value={exhibitionData.image_url} 
-                onChange={handleInputChange} 
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
+            {/* Image URL field removed from UI */}
             <div className="flex gap-3 justify-end pt-4 border-t">
                <button 
                 type="button" 

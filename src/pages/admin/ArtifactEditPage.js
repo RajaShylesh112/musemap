@@ -3,12 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSupabase } from "../../supabase"; 
 
 const dummyArtifactData = {
-  name: "Dummy Artifact Name",
+  name: "Sample Artifact Name",
   museum_id: "", 
-  period: "Ancient Dummy Era",
-  description: "A fascinating dummy artifact with a rich (though fabricated) history. Used in ceremonial dummy rituals.",
-  image_url: "https://via.placeholder.com/300x200.png?text=Dummy+Artifact",
-  origin: "Dummytopia" 
+  period: "Sample Period (e.g., Ancient Era)",
+  description: "Enter a detailed description of the artifact, its history, and significance.",
+  image_url: "https://via.placeholder.com/300x200.png?text=Sample+Artifact",
+  origin: "Sample Origin (e.g., Location)" 
 };
 
 const ArtifactEditPage = () => {
@@ -177,11 +177,11 @@ const ArtifactEditPage = () => {
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen text-gray-900">
       <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-6 md:p-8">
         <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-orange-600">
-            {artifactId ? "Edit Artifact" : "Artifact Details (Preview with Dummy Data)"}
+            {artifactId ? "Edit Artifact" : "Artifact Details (Sample Preview)"}
         </h2>
         {error && <div className="mb-4 p-3 rounded-md text-sm bg-red-100 text-red-700">Error: {error}</div>}
-        {notFound && artifactId && <div className="mb-4 p-3 rounded-md text-sm bg-yellow-100 text-yellow-700">Artifact with ID '{artifactId}' not found. Displaying dummy data for reference.</div>}
-        {!artifactId && <div className="mb-4 p-3 rounded-md text-sm bg-blue-100 text-blue-700">Displaying dummy data for UI development. No actual record is being edited.</div>}
+        {notFound && artifactId && <div className="mb-4 p-3 rounded-md text-sm bg-yellow-100 text-yellow-700">Artifact with ID '{artifactId}' not found. Displaying sample data for reference.</div>}
+        {!artifactId && <div className="mb-4 p-3 rounded-md text-sm bg-blue-100 text-blue-700">Displaying sample data for UI preview. No actual record is being edited.</div>}
         {formMessage && (
           <div className={`mb-4 p-3 rounded-md text-sm ${formMessage.type === "success" ? "bg-green-100 text-green-700" : formMessage.type === "error" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
             {formMessage.text}
@@ -189,28 +189,28 @@ const ArtifactEditPage = () => {
         )}
 
         <form onSubmit={handleSave} className="space-y-6">
-         <fieldset disabled={isSaving || (notFound && !!artifactId) || (!artifactId && artifact.name === dummyArtifactData.name)}>
+         <fieldset className="space-y-6" disabled={isSaving || (notFound && !!artifactId) || (!artifactId && artifact.name === dummyArtifactData.name)}> {/* Added space-y-6 */}
             <div>
-              <label htmlFor="name" className="block mb-1 font-semibold text-gray-700">Artifact Name</label>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Artifact Name</label> {/* Standardized label */}
               <input
                 id="name"
                 name="name"
                 type="text"
                 value={artifact.name || ""}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Consistent input */
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="museum_id" className="block mb-1 font-semibold text-gray-700">Museum</label>
+              <label htmlFor="museum_id" className="block text-sm font-medium text-gray-700 mb-1">Museum</label> {/* Standardized label */}
               <select
                 id="museum_id"
                 name="museum_id"
                 value={artifact.museum_id || ""}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Consistent input */
                 required
               >
                 <option value="">Select a Museum</option>
@@ -221,7 +221,7 @@ const ArtifactEditPage = () => {
             </div>
 
             <div>
-                <label htmlFor="origin" className="block mb-1 font-semibold text-gray-700">Origin</label>
+                <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">Origin</label> {/* Standardized label */}
                 <input
                 id="origin"
                 name="origin"
@@ -229,12 +229,12 @@ const ArtifactEditPage = () => {
                 value={artifact.origin || ""}
                 onChange={handleChange}
                 placeholder="e.g., Harappa, Mughal Empire"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Consistent input */
                 />
             </div>
 
             <div>
-              <label htmlFor="period" className="block mb-1 font-semibold text-gray-700">Period</label>
+              <label htmlFor="period" className="block text-sm font-medium text-gray-700 mb-1">Period</label> {/* Standardized label */}
               <input
                 id="period"
                 name="period"
@@ -242,24 +242,24 @@ const ArtifactEditPage = () => {
                 value={artifact.period || ""}
                 onChange={handleChange}
                 placeholder="e.g., Indus Valley Civilization, Mughal Era"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Consistent input */
               />
             </div>
 
             <div>
-              <label htmlFor="description" className="block mb-1 font-semibold text-gray-700">Description</label>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label> {/* Standardized label */}
               <textarea
                 id="description"
                 name="description"
                 value={artifact.description || ""}
                 onChange={handleChange}
                 rows="4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Consistent input */
               />
             </div>
             
             <div>
-              <label htmlFor="image_url" className="block mb-1 font-semibold text-gray-700">Image URL</label>
+              <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-1">Image URL</label> {/* Standardized label */}
               <input
                 id="image_url"
                 name="image_url"
@@ -267,14 +267,14 @@ const ArtifactEditPage = () => {
                 value={artifact.image_url || ""}
                 onChange={handleChange}
                 placeholder="https://example.com/image.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Consistent input */
               />
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3 pt-4">
+            <div className="flex flex-col md:flex-row gap-3 pt-6 mt-6 border-t border-gray-200"> {/* Standardized actions div */}
               <button
                 type="button"
-                className="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-md font-semibold transition-colors duration-150"
+                className="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-md font-semibold transition-colors duration-150" /* Standardized button */
                 onClick={() => navigate(artifactId ? -1 : "/admin/dashboard/artifacts")} 
                 disabled={isSaving}
               >
@@ -282,10 +282,10 @@ const ArtifactEditPage = () => {
               </button>
               <button
                 type="submit"
-                className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-50"
+                className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-70" /* Standardized button */
                 disabled={isSaving || (notFound && !!artifactId) || (!artifactId && artifact.name === dummyArtifactData.name)}
               >
-                {isSaving ? "Saving..." : (artifactId ? "Save Changes" : "Create (Dummy - Not Savable)")}
+                {isSaving ? "Saving..." : (artifactId ? "Save Changes" : "Preview (Not Savable)")}
               </button>
             </div>
           </fieldset>

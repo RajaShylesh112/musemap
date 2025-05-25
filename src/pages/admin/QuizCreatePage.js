@@ -4,10 +4,10 @@ import { getSupabase } from "../../supabase";
 
 const initialQuizState = {
   title: "",
-  description: "", // Assuming description is part of quizzes table based on QuizEditPage
+  // description: "", // description field removed
   questions: [{ question_text: "", options: ["", "", "", ""], correct_answer_index: 0 }],
   museum_id: null,
-  rewards: { points: 10, badge_name: "Quiz Master" } // Default rewards, matching QuizEditPage structure
+  rewards: { points: 10, badge_name: "Quiz Master" } 
 };
 
 const QuizCreatePage = () => {
@@ -175,8 +175,8 @@ const QuizCreatePage = () => {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6 md:p-8">
-          <fieldset disabled={isSaving || !!formError || isLoadingUserMuseum}>
-            <div className="mb-4">
+          <fieldset className="space-y-6" disabled={isSaving || !!formError || isLoadingUserMuseum}> {/* Added space-y-6 */}
+            <div> {/* Removed mb-4 from direct children, space-y-6 on fieldset handles it */}
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
               <input 
                 id="title"
@@ -187,24 +187,14 @@ const QuizCreatePage = () => {
                 required
               />
             </div>
-            <div className="mb-4">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea 
-                id="description"
-                name="description"
-                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" 
-                value={quizData.description} 
-                onChange={handleInputChange} 
-                rows={3} 
-              />
-            </div>
+            {/* Description field removed from UI */}
 
             {/* Rewards Section */}
-            <div className="mb-6 border-t pt-4 mt-4">
-                <h3 className="text-lg font-semibold mb-2 text-gray-800">Rewards</h3>
+            <div className="border-t pt-6 mt-6"> {/* Standardized spacing */}
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">Rewards</h3> {/* Standardized heading */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="rewards_points" className="block text-sm font-medium text-gray-700">Points</label>
+                        <label htmlFor="rewards_points" className="block text-sm font-medium text-gray-700 mb-1">Points</label> {/* Added mb-1 */}
                         <input
                             type="number"
                             id="rewards_points"
@@ -215,7 +205,7 @@ const QuizCreatePage = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="rewards_badge_name" className="block text-sm font-medium text-gray-700">Badge Name</label>
+                        <label htmlFor="rewards_badge_name" className="block text-sm font-medium text-gray-700 mb-1">Badge Name</label> {/* Added mb-1 */}
                         <input
                             type="text"
                             id="rewards_badge_name"
@@ -229,15 +219,15 @@ const QuizCreatePage = () => {
                 </div>
             </div>
 
-            <div className="mb-6 border-t pt-4 mt-4">
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold text-lg text-gray-800">Questions</span>
-                <button type="button" onClick={handleAddQuestion} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md font-semibold text-sm shadow-sm">Add Question</button>
+            <div className="border-t pt-6 mt-6"> {/* Standardized spacing */}
+              <div className="flex justify-between items-center mb-4"> {/* Standardized mb */}
+                <h3 className="text-xl font-semibold text-gray-800">Questions</h3> {/* Standardized heading */}
+                <button type="button" onClick={handleAddQuestion} className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-semibold text-sm shadow-sm">Add Question</button> {/* Changed to green */}
               </div>
               {quizData.questions.map((q, idx) => (
-                <div key={idx} className="mb-4 border rounded-lg p-4 bg-gray-50 space-y-3">
+                <div key={idx} className="mb-4 border rounded-lg p-4 bg-gray-50 space-y-3"> {/* This internal spacing is fine */}
                   <div>
-                    <label htmlFor={`question_text-${idx}`} className="block text-sm font-medium text-gray-700">Question {idx + 1}</label>
+                    <label htmlFor={`question_text-${idx}`} className="block text-sm font-medium text-gray-700 mb-1">Question {idx + 1}</label> {/* Added mb-1 */}
                     <textarea 
                       id={`question_text-${idx}`}
                       className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white" 
@@ -274,10 +264,10 @@ const QuizCreatePage = () => {
                 </div>
               ))}
             </div>
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-end pt-6 mt-6 border-t border-gray-200"> {/* Standardized spacing */}
               <button 
                 type="submit" 
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-70"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-70" /* Adjusted padding */
                 disabled={isSaving || !!formError || isLoadingUserMuseum}
               >
                 {isSaving ? "Creating..." : "Create Quiz"}

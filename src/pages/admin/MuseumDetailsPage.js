@@ -239,7 +239,7 @@ const MuseumDetailsPage = () => {
           </div>
         )}
         {/* Disable form fields if not logged in or during initial load */}
-        <fieldset disabled={isLoading || (formMessage?.type === 'error' && !userId) || isSaving}>
+        <fieldset className="m-0 p-0 border-0" disabled={isLoading || (formMessage?.type === 'error' && !userId) || isSaving}>
           {activeTab === 0 && ( // Basic Info
             <div className="space-y-6">
               <div>

@@ -3,14 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getSupabase } from "../../supabase"; 
 
 const dummyQuizData = {
-  title: "Dummy Quiz Adventure",
+  title: "Sample Quiz Adventure",
   museum_id: "", 
-  description: "A fun quiz about historical artifacts and general knowledge, filled with intriguing questions.",
   questions: [
-    { question_text: "What is the primary material of the Dancing Girl statue from Mohenjo-daro?", options: ["Bronze", "Terracotta", "Gold", "Ivory"], correct_answer_index: 0 },
-    { question_text: "Which Mughal emperor commissioned the Taj Mahal?", options: ["Akbar", "Jahangir", "Shah Jahan", "Aurangzeb"], correct_answer_index: 2 }
+    { question_text: "Sample Question 1: What is the primary material of the Dancing Girl statue from Mohenjo-daro?", options: ["Bronze", "Terracotta", "Gold", "Ivory"], correct_answer_index: 0 },
+    { question_text: "Sample Question 2: Which Mughal emperor commissioned the Taj Mahal?", options: ["Akbar", "Jahangir", "Shah Jahan", "Aurangzeb"], correct_answer_index: 2 }
   ],
-  rewards: { points: 50, badge_name: "History Novice" },
+  rewards: { points: 50, badge_name: "Sample Badge" },
 };
 
 
@@ -20,7 +19,7 @@ const QuizEditPage = () => {
   const supabase = getSupabase();
 
   const initialFormState = quizId ? 
-    { title: "", museum_id: "", description: "", questions: [], rewards: { points: 0, badge_name: "" } } :
+    { title: "", museum_id: "", questions: [], rewards: { points: 0, badge_name: "" } } : // description removed
     dummyQuizData;
 
   const [quiz, setQuiz] = useState(initialFormState);
@@ -56,13 +55,24 @@ const QuizEditPage = () => {
       }
 
       if (!quizId) { 
-        if (quiz.museum_id === "" && museumList.length > 0) {
-            // setQuiz(prev => ({...prev, museum_id: museumList[0].id })); // Optional: pre-select museum
+        // No ID, using dummy data. Ensure museum_id is set if possible.
+        if (dummyQuizData.museum_id === "" && museumList.length > 0) {
+             // setQuiz(prev => ({...prev, museum_id: museumList[0].id })); // Example
         }
         setLoading(false);
         return;
       }
+      
+      // Check for invalid numeric ID format
+      if (quizId && !isNaN(Number(quizId)) && !quizId.includes('-')) {
+        setError("Invalid Quiz ID format. Please use valid links.");
+        setNotFound(true); // Treat as not found
+        setQuiz(dummyQuizData); // Show dummy data
+        setLoading(false);
+        return;
+      }
 
+      // If quizId is present and valid format, proceed to fetch it.
       setLoading(true);
       setError(null);
       setNotFound(false);
@@ -85,7 +95,7 @@ const QuizEditPage = () => {
           setQuiz({ 
             title: quizDataResult.title || "",
             museum_id: quizDataResult.museum_id || "",
-            description: quizDataResult.description || "",
+            // description: quizDataResult.description || "", // description removed
             questions: Array.isArray(quizDataResult.questions) ? quizDataResult.questions : (typeof quizDataResult.questions === 'string' ? JSON.parse(quizDataResult.questions) : []),
             rewards: typeof quizDataResult.rewards === 'object' && quizDataResult.rewards !== null ? quizDataResult.rewards : (typeof quizDataResult.rewards === 'string' ? JSON.parse(quizDataResult.rewards) : { points: 0, badge_name: "" }),
             ...quizDataResult 
@@ -182,7 +192,7 @@ const QuizEditPage = () => {
         .update({
           title: quiz.title,
           museum_id: quiz.museum_id,
-          description: quiz.description, 
+          // description: quiz.description, // description removed
           questions: quiz.questions, 
           rewards: quiz.rewards,     
           updated_at: new Date().toISOString(), 
@@ -265,12 +275,12 @@ const QuizEditPage = () => {
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen text-gray-900">
       <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6 md:p-8">
         <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-orange-600">
-            {quizId ? "Edit Quiz" : "Quiz Details (Preview with Dummy Data)"}
+            {quizId ? "Edit Quiz" : "Quiz Details (Sample Preview)"}
         </h2>
 
         {error && <div className="mb-4 p-3 rounded-md text-sm bg-red-100 text-red-700">Error: {error}</div>}
-        {notFound && quizId && <div className="mb-4 p-3 rounded-md text-sm bg-yellow-100 text-yellow-700">Quiz with ID '{quizId}' not found. Displaying dummy data for reference.</div>}
-        {!quizId && <div className="mb-4 p-3 rounded-md text-sm bg-blue-100 text-blue-700">Displaying dummy data for UI development. No actual record is being edited.</div>}
+        {notFound && quizId && <div className="mb-4 p-3 rounded-md text-sm bg-yellow-100 text-yellow-700">Quiz with ID '{quizId}' not found. Displaying sample data for reference.</div>}
+        {!quizId && <div className="mb-4 p-3 rounded-md text-sm bg-blue-100 text-blue-700">Displaying sample data for UI preview. No actual record is being edited.</div>}
 
         {formMessage && (
           <div className={`mb-4 p-3 rounded-md text-sm ${formMessage.type === "success" ? "bg-green-100 text-green-700" : formMessage.type === "error" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
@@ -279,43 +289,30 @@ const QuizEditPage = () => {
         )}
 
         <form onSubmit={handleSave} className="space-y-6">
-         <fieldset disabled={isSaving || (notFound && !!quizId) || (!quizId && quiz.title === dummyQuizData.title) }>
+         <fieldset className="space-y-6" disabled={isSaving || (notFound && !!quizId) || (!quizId && quiz.title === dummyQuizData.title) }> {/* Added space-y-6 to fieldset for consistency */}
             {/* Quiz Title */}
             <div>
-              <label htmlFor="title" className="block mb-1 font-semibold text-gray-700">Quiz Title</label>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label> {/* Standardized label */}
               <input
                 id="title"
                 name="title"
                 type="text"
                 value={quiz.title || ""}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" {/* Consistent input style */}
                 required
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block mb-1 font-semibold text-gray-700">Description</label>
-              <textarea
-                id="description"
-                name="description"
-                value={quiz.description || ""}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
               />
             </div>
 
             {/* Museum Selection */}
             <div>
-              <label htmlFor="museum_id" className="block mb-1 font-semibold text-gray-700">Museum</label>
+              <label htmlFor="museum_id" className="block text-sm font-medium text-gray-700 mb-1">Museum</label> {/* Standardized label */}
               <select
                 id="museum_id"
                 name="museum_id"
                 value={quiz.museum_id || ""}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" {/* Consistent input style */}
                 required
               >
                 <option value="">Select a Museum</option>
@@ -332,50 +329,50 @@ const QuizEditPage = () => {
                 <button
                   type="button"
                   onClick={handleAddQuestion}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow-sm text-sm font-medium"
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-semibold text-sm shadow-sm" /* Ensured consistent button style */
                 >
                   Add Question
                 </button>
               </div>
               {quiz.questions && quiz.questions.map((q, index) => (
                 <div key={index} className="p-4 border rounded-md mb-4 bg-gray-50 space-y-3">
-                  <label htmlFor={`question_text-${index}`} className="block text-sm font-medium text-gray-700">
+                  <label htmlFor={`question_text-${index}`} className="block text-sm font-medium text-gray-700 mb-1"> {/* Standardized label */}
                     Question #{index + 1}
                   </label>
                   <textarea
                     id={`question_text-${index}`}
-                    value={q.question_text}
+                    value={q.question_text || ""}
                     onChange={(e) => handleQuestionChange(index, "question_text", e.target.value)}
                     placeholder="Enter question text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white" /* Standardized input style */
                     rows="2"
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {q.options.map((opt, optIndex) => (
                       <div key={optIndex}>
-                        <label htmlFor={`option-${index}-${optIndex}`} className="block text-xs font-medium text-gray-600">
+                        <label htmlFor={`option-${index}-${optIndex}`} className="block text-xs font-medium text-gray-600 mb-1"> {/* Standardized label */}
                           Option {optIndex + 1}
                         </label>
                         <input
                           type="text"
                           id={`option-${index}-${optIndex}`}
-                          value={opt}
+                          value={opt || ""}
                           onChange={(e) => handleQuestionChange(index, `option-${optIndex}`, e.target.value)}
                           placeholder={`Option ${optIndex + 1}`}
-                          className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 text-sm"
+                          className="w-full rounded-md px-2 py-1 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm" /* Standardized input style */
                         />
                       </div>
                     ))}
                   </div>
                   <div>
-                    <label htmlFor={`correct_answer_index-${index}`} className="block text-sm font-medium text-gray-700">
+                    <label htmlFor={`correct_answer_index-${index}`} className="block text-sm font-medium text-gray-700 mb-1"> {/* Standardized label */}
                       Correct Answer
                     </label>
                     <select
                       id={`correct_answer_index-${index}`}
                       value={q.correct_answer_index}
                       onChange={(e) => handleQuestionChange(index, "correct_answer_index", parseInt(e.target.value, 10))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm"
+                      className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm" /* Standardized input style */
                     >
                       {q.options.map((_, optIndex) => (
                         <option key={optIndex} value={optIndex}>Option {optIndex + 1}</option>
@@ -399,18 +396,18 @@ const QuizEditPage = () => {
               <h3 className="text-xl font-semibold mb-4 text-gray-800">Rewards</h3>
               <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-6">
                 <div>
-                  <label htmlFor="rewards_points" className="block text-sm font-medium text-gray-700">Points</label>
+                  <label htmlFor="rewards_points" className="block text-sm font-medium text-gray-700 mb-1">Points</label> {/* Standardized label */}
                   <input
                     type="number"
                     id="rewards_points"
                     name="points"
                     value={quiz.rewards.points || 0}
                     onChange={handleRewardChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Standardized input style */
                   />
                 </div>
                 <div>
-                  <label htmlFor="rewards_badge_name" className="block text-sm font-medium text-gray-700">Badge Name</label>
+                  <label htmlFor="rewards_badge_name" className="block text-sm font-medium text-gray-700 mb-1">Badge Name</label> {/* Standardized label */}
                   <input
                     type="text"
                     id="rewards_badge_name"
@@ -425,10 +422,10 @@ const QuizEditPage = () => {
             </div>
             
             {/* Action Buttons */}
-            <div className="flex flex-col md:flex-row gap-3 pt-4">
+            <div className="flex flex-col md:flex-row gap-3 pt-6 mt-6 border-t border-gray-200"> {/* Standardized spacing and border */}
               <button
                 type="button"
-                className="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-md font-semibold transition-colors duration-150"
+                className="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-md font-semibold transition-colors duration-150" /* Adjusted padding */
                 onClick={() => navigate(quizId ? -1 : "/admin/dashboard/quizzes")}
                 disabled={isSaving}
               >
@@ -436,10 +433,10 @@ const QuizEditPage = () => {
               </button>
               <button
                 type="submit"
-                className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-50"
+                className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-70" /* Adjusted padding and disabled style */
                 disabled={isSaving || (notFound && !!quizId) || (!quizId && quiz.title === dummyQuizData.title)}
               >
-                {isSaving ? "Saving..." : (quizId ? "Save Changes" : "Create (Dummy - Not Savable)")}
+                {isSaving ? "Saving..." : (quizId ? "Save Changes" : "Preview (Not Savable)")}
               </button>
             </div>
           </fieldset>

@@ -119,8 +119,8 @@ const ArtifactCreatePage = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6 md:p-8 space-y-6">
-          <fieldset disabled={isSaving || !!formError || isLoadingUserMuseum}>
+        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6 md:p-8"> {/* Removed space-y-6 from form, will add to fieldset */}
+          <fieldset className="space-y-6" disabled={isSaving || !!formError || isLoadingUserMuseum}> {/* Added space-y-6 to fieldset */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
               <input 
@@ -175,18 +175,18 @@ const ArtifactCreatePage = () => {
                 placeholder="https://example.com/image.jpg"
               />
             </div>
-            <div className="flex gap-3 justify-end pt-4 border-t">
+            <div className="flex flex-col md:flex-row gap-3 justify-end pt-6 mt-6 border-t border-gray-200"> {/* Standardized actions div styling */}
               <button 
                 type="button" 
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md font-semibold transition-colors" 
-                onClick={() => navigate(-1)} // Or specific path like '/admin/dashboard/artifacts'
+                className="w-full md:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-md font-semibold transition-colors duration-150"  // Standardized button padding
+                onClick={() => navigate(-1)} 
                 disabled={isSaving}
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-70"
+                className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-md font-semibold shadow-md transition-colors duration-150 disabled:opacity-70" // Standardized button padding
                 disabled={isSaving || !!formError || isLoadingUserMuseum}
               >
                 {isSaving ? "Creating..." : "Create Artifact"}
