@@ -94,8 +94,7 @@ const QuizCreatePage = () => {
     setQuizData(prev => ({ ...prev, questions: updatedQuestions }));
   };
 
-  const handleAnswerChange = (qIdx, value) // value is the option index
-  => { 
+  const handleAnswerChange = (qIdx, value) => { // value is the option index
     const updatedQuestions = quizData.questions.map((q, index) => {
       if (index === qIdx) {
         return { ...q, correct_answer_index: parseInt(value, 10) };
