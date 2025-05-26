@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabase'; // Changed import
 import museumImg1 from '../assets/images/museum-img1.jpg';
 import museumImg2 from '../assets/images/museum-img2.jpg';
 import museumImg3 from '../assets/images/museum-img3.jpg';
@@ -14,25 +14,33 @@ export function MuseumsPage() {
         type: '',
         hours: ''
     });
+    
+    const supabase = getSupabase(); // Get Supabase client instance
 
     useEffect(() => {
+        const fetchMuseums = async () => {
+            if (!supabase) {
+                console.error("Supabase client not available for fetching museums.");
+                setLoading(false);
+                return;
+            }
+            try {
+                setLoading(true); // Ensure loading is true at the start of fetch
+                const { data, error } = await supabase
+                    .from('museums')
+                    .select('*');
+
+                if (error) throw error;
+                setMuseums(data || []); // Ensure data is an array
+            } catch (error) {
+                console.error('Error fetching museums:', error); // Uncommented error log
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchMuseums();
-    }, []);
-
-    const fetchMuseums = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('museums')
-                .select('*');
-
-            if (error) throw error;
-            setMuseums(data);
-        } catch (error) {
-            // console.error('Error fetching museums:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [supabase]); // Added supabase to dependency array
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;

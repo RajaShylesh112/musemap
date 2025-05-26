@@ -102,7 +102,12 @@ export async function getMuseumById(museumId) {
     const supabase = getSupabase();
     const { data, error } = await supabase
         .from('museums')
-        .select('*')
+        .select(`
+            *,
+            quizzes (*),
+            artifacts (*),
+            exhibitions (*)
+        `)
         .eq('id', museumId)
         .single();
 

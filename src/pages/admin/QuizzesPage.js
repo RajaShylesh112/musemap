@@ -47,9 +47,10 @@ const QuizzesPage = () => {
                 <td>{quiz.created}</td>
                 <td>{quiz.updated}</td>
                 <td className="text-right space-x-2">
-                  <Link to={`/admin/quizzes/edit/${idx}`} className="inline-block">
+                  {/* Edit button removed temporarily until data fetching with UUIDs is implemented */}
+                  {/* <Link to={`/admin/quizzes/edit/${idx}`} className="inline-block">
                     <button className="px-3 py-1 rounded bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold">Edit</button>
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={() => handleDelete(idx)}
                     className="px-3 py-1 rounded bg-red-500 hover:bg-red-600 text-white text-sm font-semibold"
