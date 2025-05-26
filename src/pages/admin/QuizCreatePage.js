@@ -7,7 +7,7 @@ const initialQuizState = {
   // description: "", // description field removed
   questions: [{ question_text: "", options: ["", "", "", ""], correct_answer_index: 0 }],
   museum_id: null,
-  rewards: { points: 10, badge_name: "Quiz Master" } 
+  rewards: { gold: 90, silver: 80, bronze: 60 } 
 };
 
 const QuizCreatePage = () => {
@@ -110,7 +110,7 @@ const QuizCreatePage = () => {
       ...prev,
       rewards: {
         ...prev.rewards,
-        [name]: name === 'points' ? parseInt(value, 10) || 0 : value
+        [name]: parseInt(value, 10) || 0
       }
     }));
   };
@@ -197,26 +197,45 @@ const QuizCreatePage = () => {
                         <label htmlFor="rewards_points" className="block text-sm font-medium text-gray-700 mb-1">Points</label> {/* Added mb-1 */}
                         <input
                             type="number"
-                            id="rewards_points"
-                            name="points"
-                            value={quizData.rewards.points}
+                            id="rewards_bronze"
+                            name="bronze"
+                            value={quizData.rewards.bronze}
                             onChange={handleRewardChange}
+                            min="0"
                             className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                            required
                         />
                     </div>
                     <div>
-                        <label htmlFor="rewards_badge_name" className="block text-sm font-medium text-gray-700 mb-1">Badge Name</label> {/* Added mb-1 */}
+                        <label htmlFor="rewards_silver" className="block text-sm font-medium text-gray-700 mb-1">Silver Badge Points</label> {/* Added mb-1 */}
                         <input
-                            type="text"
-                            id="rewards_badge_name"
-                            name="badge_name"
-                            value={quizData.rewards.badge_name}
+                            type="number"
+                            id="rewards_silver"
+                            name="silver"
+                            value={quizData.rewards.silver}
                             onChange={handleRewardChange}
-                            placeholder="e.g., History Buff"
+                            min="0"
                             className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="rewards_gold" className="block text-sm font-medium text-gray-700 mb-1">Gold Badge Points</label> {/* Added mb-1 */}
+                        <input
+                            type="number"
+                            id="rewards_gold"
+                            name="gold"
+                            value={quizData.rewards.gold}
+                            onChange={handleRewardChange}
+                            min="0"
+                            className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                            required
                         />
                     </div>
                 </div>
+                <p className="mt-2 text-sm text-gray-500">
+                    Points will be awarded based on the user's quiz score percentage.
+                </p>
             </div>
 
             <div className="border-t pt-6 mt-6"> {/* Standardized spacing */}

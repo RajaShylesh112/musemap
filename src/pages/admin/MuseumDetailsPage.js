@@ -1,13 +1,259 @@
-import React, { useState, useEffect } from "react"; // Added useEffect
+/**
+ * MuseumDetailsPage - Admin interface for managing museum information
+ * 
+ * This component provides a form for creating and editing museum details including:
+ * - Basic information (name, description, contact details)
+ * - Opening hours management with an interactive time picker
+ * - Ticket pricing configuration
+ * 
+ * The component handles both creation of new museum entries and editing of existing ones.
+ * It includes form validation, loading states, and error handling.
+ * 
+ * @module MuseumDetailsPage
+ */
+
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSupabase } from "../../supabase";
 
+/**
+ * Custom TimePicker Component
+ * 
+ * A reusable time picker that provides:
+ * - Dropdown selection of times in 15-minute intervals
+ * - 12/24 hour format support
+ * - Current time as placeholder
+ * - Keyboard accessibility
+ */
+const TimePicker = ({ value, onChange, disabled, className = '' }) => {
+  // State for managing the current time and dropdown visibility
+  const [currentTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  /**
+   * Cleans time string by removing AM/PM and extra spaces
+   * @param {string} timeStr - The time string to clean
+   * @returns {string} Cleaned time string
+   */
+  const cleanTimeValue = (timeStr) => {
+    if (!timeStr) return '';
+    return timeStr.replace(/\s*[AP]M\s*/i, '').trim();
+  };
+  
+  /**
+   * Converts time string to 24-hour format for consistent storage
+   * @param {string} timeStr - Time string to convert
+   * @returns {string} Time in 24-hour format (HH:MM)
+   */
+  const formatTo24Hour = (timeStr) => {
+    if (!timeStr) return '';
+    
+    const cleaned = cleanTimeValue(timeStr);
+    // If already in 24-hour format (HH:MM), return as is
+    if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(cleaned)) {
+      return cleaned;
+    }
+    
+    // Handle 12-hour format with AM/PM
+    const timeMatch = cleaned.match(/^(\d{1,2}):(\d{2})\s*([AP]M)?$/i);
+    if (timeMatch) {
+      let [_, hours, minutes, period] = timeMatch;
+      hours = parseInt(hours, 10);
+      
+      if (period) {
+        period = period.toUpperCase();
+        if (period === 'PM' && hours < 12) {
+          hours += 12;
+        } else if (period === 'AM' && hours === 12) {
+          hours = 0;
+        }
+      }
+      
+      return `${String(hours).padStart(2, '0')}:${minutes}`;
+    }
+    
+    return cleaned;
+  };
+  
+  /**
+   * Generates an array of time options in 15-minute intervals (24-hour format)
+   * @returns {Array} Array of time strings in HH:MM format
+   */
+  const timeOptions = (() => {
+    const options = [];
+    for (let hour = 0; hour < 24; hour++) {
+      ['00', '15', '30', '45'].forEach(minute => {
+        options.push(`${String(hour).padStart(2, '0')}:${minute}`);
+      });
+    }
+    return options;
+  })();
+
+  /**
+   * Formats a time string for display in 12-hour format with AM/PM
+   * @param {string} timeStr - Time string to format
+   * @returns {string} Formatted time string (e.g., '2:30 PM')
+   */
+  const formatForDisplay = (timeStr) => {
+    if (timeStr === 'Closed') return 'Closed';
+    
+    const timeToFormat = timeStr || currentTime;
+    const formatted24h = formatTo24Hour(timeToFormat);
+    
+    if (!formatted24h) {
+      const now = new Date();
+      const fallbackTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      return formatTimeTo12Hour(fallbackTime);
+    }
+    
+    return formatTimeTo12Hour(formatted24h);
+  };
+  
+  /**
+   * Converts 24-hour time to 12-hour format with AM/PM
+   * @param {string} time24 - Time string in 24-hour format (HH:MM)
+   * @returns {string} Formatted time in 12-hour format with AM/PM
+   */
+  const formatTimeTo12Hour = (time24) => {
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12; // Convert 0 or 24 to 12
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  /**
+   * Handles clicks outside the dropdown to close it
+   */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      
+      // Auto-scroll to the selected time when dropdown opens
+      if (value && value !== 'Closed') {
+        const selectedElement = document.getElementById(`time-${formatTo24Hour(value)}`);
+        if (selectedElement) {
+          selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    }
+
+    // Clean up event listener on unmount
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, value]);
+
+  /**
+   * Handles time selection from the dropdown
+   * @param {string} time - The selected time string
+   */
+  const handleTimeSelect = (time) => {
+    onChange(formatTo24Hour(time));
+    setIsOpen(false);
+  };
+
+  /**
+   * Gets the current time in HH:MM format
+   * @returns {string} Current time string
+   */
+  const getCurrentTime = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  };
+  
+  // Determine the value to display in the input
+  const displayValue = (value === '' || value === undefined) ? getCurrentTime() : value;
+  // Check if we're showing a placeholder (no value selected yet)
+  const isPlaceholder = (value === '' || value === undefined);
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <div 
+        className={`flex items-center justify-between w-full px-3 py-2 border rounded-md cursor-pointer ${disabled ? 'bg-gray-100' : 'bg-white hover:border-orange-400'} ${isOpen ? 'ring-2 ring-orange-500 border-orange-500' : 'border-gray-300'}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+      >
+        <span className={`${isPlaceholder ? 'text-gray-400' : ''}`}>
+          {formatForDisplay(displayValue)}
+        </span>
+        <svg 
+          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+      
+      {isOpen && !disabled && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          <div className="py-1">
+            {timeOptions.map((time) => {
+              const displayTime = formatForDisplay(time);
+              return (
+                <div
+                  key={time}
+                  id={`time-${time}`}
+                  className={`px-4 py-2 text-sm cursor-pointer hover:bg-orange-50 ${formatTo24Hour(value) === time ? 'bg-orange-100 text-orange-700' : 'text-gray-700'}`}
+                  onClick={() => handleTimeSelect(time)}
+                >
+                  {displayTime}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Tab configuration for the museum details form
+ * Defines the main sections of the form
+ */
 const TAB_LIST = [
-  { label: "Basic Info" },
-  { label: "Opening Hours" },
-  { label: "Ticket Prices" },
-  { label: "Content" },
+  { label: "Basic Info" },    // Basic museum information
+  { label: "Opening Hours" }, // Weekly schedule and hours
+  { label: "Ticket Prices" }, // Pricing for different visitor categories
+  { label: "Content" },       // Museum content and exhibits
 ];
+
+/**
+ * Converts the database opening hours format to the form format
+ * @param {Object} dbHours - Opening hours in database format
+ * @returns {Array} Opening hours in form format
+ */
+const convertDbHoursToFormFormat = (dbHours) => {
+  if (!dbHours) return [];
+  
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  return days.map(day => {
+    const hours = dbHours[day] || "Closed";
+    if (hours === "Closed") {
+      return { day, open: "Closed", close: "" };
+    }
+    
+    // Handle formats like "9:15 AM - 6:00 PM"
+    const [openStr, closeStr] = hours.split(" - ");
+    return {
+      day,
+      open: openStr || "",
+      close: closeStr || ""
+    };
+  });
+};
 
 const initialMuseumState = {
   name: "",
@@ -15,33 +261,30 @@ const initialMuseumState = {
   description: "",
   contact_phone: "",
   contact_email: "",
-  facilities: "", // Will be stored as comma-separated string, converted to array on save
-  opening_hours: [
-    { day: "Monday", open: "10:00", close: "18:00" },
-    { day: "Tuesday", open: "10:00", close: "18:00" },
-    { day: "Wednesday", open: "10:00", close: "18:00" },
-    { day: "Thursday", open: "10:00", close: "18:00" },
-    { day: "Friday", open: "10:00", close: "18:00" },
-    { day: "Saturday", open: "10:00", close: "18:00" },
-    { day: "Sunday", open: "Closed", close: "" },
-  ],
+  facilities: "",
+  opening_hours: {}, // Will be populated from database
   ticket_price: { Adult: 0, Child: 0, Student: 0, Senior: 0, Foreigner: 0 },
   about: "",
-  interesting_facts: "", // Will be stored as comma-separated string, converted to array on save
+  interesting_facts: "",
   image_url: "",
-  user_id: null, // To be populated
+  user_id: null,
 };
 
 // This page now serves as "Manage My Museum" (Create or Edit)
+/**
+ * Main component for managing museum details
+ * Handles both creation of new museums and editing of existing ones
+ */
 const MuseumDetailsPage = () => {
-  const [activeTab, setActiveTab] = useState(0);
-  const [form, setForm] = useState(initialMuseumState);
-  const [isLoading, setIsLoading] = useState(true); // For initial data load
-  const [isSaving, setIsSaving] = useState(false);
-  const [formMessage, setFormMessage] = useState(null);
-  const [currentUserMuseumId, setCurrentUserMuseumId] = useState(null); // To store loaded museum ID
-  const [pageMode, setPageMode] = useState("Create"); // "Create" or "Edit"
-  const [userId, setUserId] = useState(null); // Store current user's ID
+  // State management
+  const [activeTab, setActiveTab] = useState(0);           // Currently active tab index
+  const [form, setForm] = useState(initialMuseumState);    // Form data state
+  const [isLoading, setIsLoading] = useState(true);        // Loading state for initial data
+  const [isSaving, setIsSaving] = useState(false);         // Loading state for save operations
+  const [formMessage, setFormMessage] = useState(null);    // Form status/error messages
+  const [currentUserMuseumId, setCurrentUserMuseumId] = useState(null); // Currently loaded museum ID
+  const [pageMode, setPageMode] = useState("Create");      // Operation mode: "Create" or "Edit"
+  const [userId, setUserId] = useState(null);              // Current authenticated user ID
 
   const navigate = useNavigate();
   const supabase = getSupabase();
@@ -81,12 +324,69 @@ const MuseumDetailsPage = () => {
       }
 
       if (museumData) { // User has a museum - Edit Mode
-        // Convert array fields back to comma-separated strings for form display
+        console.log('Raw opening_hours from DB:', museumData.opening_hours);
+        
+        // Initialize with default empty opening hours
+        let openingHours = {};
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        
+        try {
+          // Handle different formats of opening_hours
+          if (museumData.opening_hours && typeof museumData.opening_hours === 'object' && 
+              !Array.isArray(museumData.opening_hours)) {
+            // If it's already an object with day keys, use it directly
+            openingHours = { ...museumData.opening_hours };
+            console.log('Using object format from DB');
+          } else if (typeof museumData.opening_hours === 'string') {
+            try {
+              // Try to parse as JSON
+              const parsed = JSON.parse(museumData.opening_hours);
+              if (parsed && typeof parsed === 'object') {
+                openingHours = parsed;
+                console.log('Parsed JSON object from string');
+              }
+            } catch (e) {
+              console.warn('Failed to parse opening_hours as JSON, using default', e);
+            }
+          } else if (Array.isArray(museumData.opening_hours)) {
+            // Convert from array format to object format
+            museumData.opening_hours.forEach(dayData => {
+              if (dayData && dayData.day) {
+                if (dayData.open === 'Closed' || !dayData.open || !dayData.close) {
+                  openingHours[dayData.day] = 'Closed';
+                } else {
+                  openingHours[dayData.day] = `${dayData.open} - ${dayData.close}`;
+                }
+              }
+            });
+            console.log('Converted array to object format');
+          }
+          
+          // Ensure all days are present
+          days.forEach(day => {
+            if (!openingHours[day]) {
+              openingHours[day] = 'Closed';
+            }
+          });
+          
+          console.log('Processed opening hours:', openingHours);
+          
+        } catch (error) {
+          console.error('Error processing opening hours, using default:', error);
+          // Initialize with all days closed
+          days.forEach(day => {
+            openingHours[day] = 'Closed';
+          });
+        }
+
+        // Prepare form data
         const formData = {
           ...museumData,
-          facilities: Array.isArray(museumData.facilities) ? museumData.facilities.join(', ') : '',
-          interesting_facts: Array.isArray(museumData.interesting_facts) ? museumData.interesting_facts.join(', ') : '',
+          opening_hours: openingHours,
+          facilities: Array.isArray(museumData.facilities) ? museumData.facilities.join(', ') : (museumData.facilities || ''),
+          interesting_facts: Array.isArray(museumData.interesting_facts) ? museumData.interesting_facts.join(', ') : (museumData.interesting_facts || ''),
         };
+        console.log('Loaded form data:', formData);
         setForm(formData);
         setCurrentUserMuseumId(museumData.id);
         setPageMode("Edit");
@@ -107,11 +407,168 @@ const MuseumDetailsPage = () => {
     setForm(prevForm => ({ ...prevForm, [name]: value }));
   };
 
-  const handleHourChange = (idx, field, value) => {
-    const updatedHours = form.opening_hours.map((hourDetail, index) =>
-      index === idx ? { ...hourDetail, [field]: value } : hourDetail
+  /**
+   * Handles changes to opening/closing hours
+   * @param {string} day - The day of the week (e.g., "Monday")
+   * @param {string} field - Either 'open' or 'close'
+   * @param {string} value - The new time value
+   */
+  const handleHourChange = (day, field, value) => {
+    setForm(prevForm => {
+      const currentHours = prevForm.opening_hours || {};
+      const currentDayHours = currentHours[day] || "";
+      
+      // Helper to clean and format time values
+      const cleanTimeValue = (timeStr) => {
+        if (!timeStr || timeStr === "Closed") return "";
+        // Remove AM/PM and extra spaces, ensure 4-digit time
+        return timeStr.replace(/\s*[AP]M\s*/i, '').trim();
+      };
+
+      // Handle setting to 'Closed'
+      if (field === 'open' && value === 'Closed') {
+        return {
+          ...prevForm,
+          opening_hours: {
+            ...currentHours,
+            [day]: "Closed"
+          }
+        };
+      }
+      
+      // Handle time changes
+      if (currentDayHours === "Closed") {
+        // If day was closed, initialize with new time
+        const newTime = field === 'open' 
+          ? `${value} - ` 
+          : ` - ${value}`;
+        
+        return {
+          ...prevForm,
+          opening_hours: {
+            ...currentHours,
+            [day]: newTime.trim()
+          }
+        };
+      }
+      
+      // Handle existing time range
+      const [currentOpen = "", currentClose = ""] = currentDayHours.split(" - ");
+      let newOpen = field === 'open' ? value : cleanTimeValue(currentOpen);
+      let newClose = field === 'close' ? value : cleanTimeValue(currentClose);
+      
+      // Validate times
+      if (newOpen && newClose) {
+        try {
+          const openTime = new Date(`2000-01-01T${newOpen}`);
+          const closeTime = new Date(`2000-01-01T${newClose}`);
+          
+          if (openTime >= closeTime) {
+            // If opening time is after or equal to closing time, adjust closing time
+            openTime.setHours(openTime.getHours() + 1);
+            newClose = `${String(openTime.getHours()).padStart(2, '0')}:${String(openTime.getMinutes()).padStart(2, '0')}`;
+          }
+        } catch (e) {
+          console.error('Error parsing time:', e);
+        }
+      }
+      
+      // Format the new hours string
+      const newHours = newOpen || newClose 
+        ? `${newOpen || ""} - ${newClose || ""}`.trim()
+        : "";
+      
+      return {
+        ...prevForm,
+        opening_hours: {
+          ...currentHours,
+          [day]: newHours || "Closed"
+        }
+      };
+    });
+  };
+  
+  // Generate time options for the time input
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 0; hour < 24; hour++) {
+      ['00', '15', '30', '45'].forEach(minute => {
+        const timeString = `${String(hour).padStart(2, '0')}:${minute}`;
+        times.push(timeString);
+      });
+    }
+    return times;
+  };
+  
+  const timeOptions = generateTimeOptions();
+
+  /**
+   * Renders a row for a single day's opening hours
+   * @param {string} day - The day of the week (e.g., "Monday")
+   * @param {number} index - The index of the day in the week
+   * @returns {JSX.Element} The rendered day row component
+   */
+  /**
+   * Renders a row for a single day's opening hours
+   * @param {string} day - The day of the week (e.g., "Monday")
+   * @returns {JSX.Element} The rendered day row component
+   */
+  const renderDayRow = (day) => {
+    const dayHours = form.opening_hours?.[day] || "";
+    const [openTime = "", closeTime = ""] = dayHours === "Closed" 
+      ? ["Closed", ""] 
+      : dayHours.split(" - ").map(s => s.trim());
+    
+    const isClosed = openTime === "Closed";
+    
+    return (
+      <div key={day} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center p-3 border rounded-md bg-gray-50 dark:bg-gray-700">
+        <div className="font-medium text-gray-700 dark:text-gray-200">{day}</div>
+        
+        {/* Open Time Input */}
+        <div className="flex items-center">
+          <label htmlFor={`open-${day}`} className="text-sm text-gray-600 dark:text-gray-300 mr-2 whitespace-nowrap">
+            Open:
+          </label>
+          <div className="flex-1">
+            <div className="flex items-center space-x-2">
+              <TimePicker
+                value={isClosed ? "" : openTime}
+                onChange={(value) => handleHourChange(day, 'open', value)}
+                className="flex-1"
+                disabled={isClosed}
+              />
+              <button
+                type="button"
+                onClick={() => handleHourChange(day, 'open', isClosed ? '09:00' : 'Closed')}
+                className={`px-3 py-1.5 text-xs rounded-md border ${
+                  isClosed 
+                    ? 'bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-900 dark:border-orange-700 dark:text-orange-200' 
+                    : 'border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-600'
+                }`}
+              >
+                {isClosed ? 'Closed' : 'Set Closed'}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Close Time Input */}
+        <div className="flex items-center">
+          <label htmlFor={`close-${day}`} className="text-sm text-gray-600 dark:text-gray-300 mr-2 whitespace-nowrap">
+            Close:
+          </label>
+          <div className="flex-1">
+            <TimePicker
+              value={isClosed ? "" : closeTime}
+              onChange={(value) => handleHourChange(day, 'close', value)}
+              disabled={isClosed || !openTime}
+              className={isClosed || !openTime ? 'opacity-50' : ''}
+            />
+          </div>
+        </div>
+      </div>
     );
-    setForm(prevForm => ({ ...prevForm, opening_hours: updatedHours }));
   };
 
   const handlePriceChange = (type, value) => {
@@ -124,76 +581,160 @@ const MuseumDetailsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!supabase || !userId) { // Ensure user ID is available
-        setFormMessage({ type: 'error', text: 'User not identified or Supabase client not available.' });
-        return;
+    console.log('Form submission started');
+    
+    if (!supabase || !userId) {
+      const errorMsg = 'User not identified or Supabase client not available.';
+      console.error(errorMsg);
+      setFormMessage({ type: 'error', text: errorMsg });
+      return;
     }
+
     if (!form.name.trim()) {
-        setFormMessage({ type: 'error', text: 'Museum name is required.' });
-        setActiveTab(0);
-        return;
+      const errorMsg = 'Museum name is required.';
+      console.error(errorMsg);
+      setFormMessage({ type: 'error', text: errorMsg });
+      setActiveTab(0);
+      return;
     }
 
     setIsSaving(true);
     setFormMessage(null);
 
-    const museumPayload = {
-      ...form,
-      user_id: userId, // Ensure user_id is correctly set
-      facilities: form.facilities.split(',').map(s => s.trim()).filter(s => s),
-      interesting_facts: form.interesting_facts.split(',').map(s => s.trim()).filter(s => s),
-    };
-    // Remove ID from payload if it's an insert operation, as DB generates it.
-    // For update, ID is used in .eq()
-    if (!currentUserMuseumId) {
-        delete museumPayload.id; 
-    }
-
-
     try {
-      let responseError, responseData;
+      console.log('Preparing museum data...');
+      
+      console.log('Preparing to save opening hours:', form.opening_hours);
+      
+      /**
+       * Formats a time string to 12-hour format with AM/PM
+       * @param {string} timeStr - Time string in 24-hour format (HH:MM)
+       * @returns {string} Formatted time (e.g., '2:30 PM')
+       */
+      const formatTime = (timeStr) => {
+        if (!timeStr || String(timeStr).toLowerCase() === 'closed') return 'Closed';
+        
+        // If time already has AM/PM, clean it first
+        const cleanTime = String(timeStr).replace(/\s*[AP]M\s*/i, '').trim();
+        
+        // Handle 24-hour format (HH:MM)
+        const [hours, minutes = '00'] = cleanTime.split(':');
+        const hour = parseInt(hours, 10);
+        if (isNaN(hour) || hour < 0 || hour > 23) {
+          console.warn('Invalid hour value:', timeStr);
+          return 'Invalid time';
+        }
+        
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12; // Convert 0 or 24 to 12
+        return `${displayHour}:${minutes.padEnd(2, '0')} ${ampm}`;
+      };
 
-      if (currentUserMuseumId) { // Edit Mode
-        const { data, error } = await supabase
-          .from('museums')
-          .update(museumPayload)
-          .eq('id', currentUserMuseumId)
-          .select()
-          .single(); // Expecting a single row back
-        responseData = data;
-        responseError = error;
-      } else { // Create Mode
-        console.log("Attempting to create museum with payload:", JSON.stringify(museumPayload, null, 2)); // Added logging
-        const { data, error } = await supabase
-          .from('museums')
-          .insert([museumPayload])
-          .select()
-          .single(); // Expecting a single row back
-        responseData = data;
-        responseError = error;
+      // Prepare the opening hours in the required format
+      const formattedOpeningHours = {};
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      
+      // Process each day's opening hours
+      days.forEach(day => {
+        const dayHours = form.opening_hours?.[day] || '';
+        
+        if (dayHours === 'Closed' || !dayHours) {
+          formattedOpeningHours[day] = 'Closed';
+          return;
+        }
+        
+        // Handle format like "9:00 AM - 5:00 PM"
+        const [openTime, closeTime] = dayHours.split(' - ').map(s => s.trim());
+        
+        if (!openTime || !closeTime) {
+          formattedOpeningHours[day] = 'Closed';
+          return;
+        }
+        
+        // Format the time range
+        formattedOpeningHours[day] = `${formatTime(openTime)} - ${formatTime(closeTime)}`;
+      });
+      
+      console.log('Formatted opening hours for save:', formattedOpeningHours);
+
+      // Prepare the museum payload
+      const museumData = {
+        ...form,
+        user_id: userId,
+        // Process array fields
+        facilities: form.facilities.split(',').map(s => s.trim()).filter(s => s),
+        interesting_facts: form.interesting_facts.split(',').map(s => s.trim()).filter(s => s),
+        // Format opening hours
+        opening_hours: formattedOpeningHours,
+        // Add the ID for updates
+        ...(currentUserMuseumId && { id: currentUserMuseumId })
+      };
+      
+      console.log('Formatted opening hours:', formattedOpeningHours);
+
+      console.log('Museum data prepared:', museumData);
+
+      // Ensure we have a valid session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session found. Please log in again.');
       }
 
-      if (responseError) throw responseError;
+      console.log('Sending data to Supabase...');
+      
+      // Make sure we're using the authenticated user's ID
+      museumData.user_id = session.user.id;
+      
+      // Use upsert which will handle both insert and update
+      const { data, error } = await supabase
+        .from('museums')
+        .upsert({
+          ...museumData,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'id',
+          returning: 'representation'
+        })
+        .select();
 
-      setFormMessage({ type: 'success', text: `Museum ${pageMode === "Create" ? "created" : "updated"} successfully!` });
-      if (responseData) {
-        // For create mode, set the new museum ID and update form with potentially processed data
-        // For edit mode, responseData is the updated museum
-         const updatedFormData = {
-          ...responseData,
-          facilities: Array.isArray(responseData.facilities) ? responseData.facilities.join(', ') : '',
-          interesting_facts: Array.isArray(responseData.interesting_facts) ? responseData.interesting_facts.join(', ') : '',
-        };
-        setForm(updatedFormData);
-        if (pageMode === "Create") {
-            setCurrentUserMuseumId(responseData.id);
-            setPageMode("Edit"); // Switch to edit mode after creation
-        }
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Supabase response:', data);
+
+      if (!data || data.length === 0) {
+        throw new Error('No data returned from server');
+      }
+
+      const savedMuseum = data[0];
+      console.log('Saved museum data:', savedMuseum);
+
+      // Update the form with the saved data
+      const updatedFormData = {
+        ...savedMuseum,
+        facilities: Array.isArray(savedMuseum.facilities) ? savedMuseum.facilities.join(', ') : '',
+        interesting_facts: Array.isArray(savedMuseum.interesting_facts) ? savedMuseum.interesting_facts.join(', ') : '',
+      };
+
+      setForm(updatedFormData);
+      
+      if (currentUserMuseumId) {
+        setFormMessage({ type: 'success', text: 'Museum updated successfully!' });
+      } else {
+        setCurrentUserMuseumId(savedMuseum.id);
+        setPageMode('Edit');
+        setFormMessage({ type: 'success', text: 'Museum created successfully!' });
       }
       
+      console.log('Form updated with saved data');
     } catch (error) {
-      console.error(`Error ${pageMode === "Create" ? "creating" : "updating"} museum:`, error);
-      setFormMessage({ type: 'error', text: `Failed to ${pageMode === "Create" ? "create" : "update"} museum: ${error.message}` });
+      console.error(`Error ${currentUserMuseumId ? 'updating' : 'creating'} museum:`, error);
+      setFormMessage({ 
+        type: 'error', 
+        text: `Failed to ${currentUserMuseumId ? 'update' : 'create'} museum: ${error.message}` 
+      });
     } finally {
       setIsSaving(false);
     }
@@ -276,39 +817,28 @@ const MuseumDetailsPage = () => {
           )}
           {activeTab === 1 && ( // Opening Hours
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-3 text-gray-800">Opening Hours</h3>
-              {form.opening_hours.map((oh, idx) => (
-                <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center p-3 border rounded-md bg-gray-50">
-                  <input
-                      name={`day-${idx}`}
-                      value={oh.day}
-                      readOnly
-                      className="w-full rounded-md px-3 py-2 bg-gray-200 text-gray-700 border border-gray-300 text-sm"
-                  />
-                  <div className="flex items-center">
-                    <label htmlFor={`open-${idx}`} className="text-sm text-gray-600 mr-2">Open:</label>
-                    <input
-                      id={`open-${idx}`}
-                      type="time"
-                      aria-label={`${oh.day} open time`}
-                      value={oh.open}
-                      onChange={e => handleHourChange(idx, "open", e.target.value)}
-                      className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm"
-                    />
-                  </div>
-                  <div className="flex items-center">
-                    <label htmlFor={`close-${idx}`} className="text-sm text-gray-600 mr-2">Close:</label>
-                    <input
-                      id={`close-${idx}`}
-                      type="time"
-                      aria-label={`${oh.day} close time`}
-                      value={oh.close}
-                      onChange={e => handleHourChange(idx, "close", e.target.value)}
-                      className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm"
-                    />
-                  </div>
-                </div>
-              ))}
+              <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Opening Hours</h3>
+              {(() => {
+                try {
+                  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+                  
+                  // If no opening hours exist, initialize with empty object
+                  if (!form || !form.opening_hours || typeof form.opening_hours !== 'object') {
+                    console.log('Initializing empty opening hours');
+                    return days.map(day => renderDayRow(day));
+                  }
+                  
+                  // Render each day with its opening hours
+                  return days.map(day => renderDayRow(day));
+                } catch (error) {
+                  console.error('Error rendering opening hours:', error);
+                  return (
+                    <div className="text-red-500 text-sm">
+                      Error loading opening hours. Please refresh the page or contact support.
+                    </div>
+                  );
+                }
+              })()}
             </div>
           )}
           {activeTab === 2 && ( // Ticket Prices

@@ -19,7 +19,7 @@ const QuizEditPage = () => {
   const supabase = getSupabase();
 
   const initialFormState = quizId ? 
-    { title: "", museum_id: "", questions: [], rewards: { points: 0, badge_name: "" } } : // description removed
+    { title: "", museum_id: "", questions: [] } :
     dummyQuizData;
 
   const [quiz, setQuiz] = useState(initialFormState);
@@ -97,7 +97,7 @@ const QuizEditPage = () => {
             museum_id: quizDataResult.museum_id || "",
             // description: quizDataResult.description || "", // description removed
             questions: Array.isArray(quizDataResult.questions) ? quizDataResult.questions : (typeof quizDataResult.questions === 'string' ? JSON.parse(quizDataResult.questions) : []),
-            rewards: typeof quizDataResult.rewards === 'object' && quizDataResult.rewards !== null ? quizDataResult.rewards : (typeof quizDataResult.rewards === 'string' ? JSON.parse(quizDataResult.rewards) : { points: 0, badge_name: "" }),
+            // Removed rewards from the form
             ...quizDataResult 
           });
         }
@@ -173,11 +173,6 @@ const QuizEditPage = () => {
       }
     }
     
-    if (quiz.rewards.points < 0) { 
-        setFormMessage({ type: "error", text: "Reward points cannot be negative." });
-        setIsSaving(false);
-        return;
-    }
     
     if (!quizId) {
         console.warn("Attempting to save without a quizId. This should be an insert operation.");
@@ -194,7 +189,6 @@ const QuizEditPage = () => {
           museum_id: quiz.museum_id,
           // description: quiz.description, // description removed
           questions: quiz.questions, 
-          rewards: quiz.rewards,     
           updated_at: new Date().toISOString(), 
         })
         .eq("id", quizId)
@@ -252,17 +246,6 @@ const QuizEditPage = () => {
     }));
   };
 
-  // --- Rewards Handlers ---
-  const handleRewardChange = (e) => {
-    const { name, value } = e.target;
-    setQuiz(prev => ({
-      ...prev,
-      rewards: {
-        ...prev.rewards,
-        [name]: name === 'points' ? parseInt(value, 10) || 0 : value
-      }
-    }));
-  };
 
   if (loading) return (
     <div className="p-8 text-center min-h-screen bg-gray-50 flex items-center justify-center">
@@ -391,36 +374,6 @@ const QuizEditPage = () => {
               {quiz.questions && quiz.questions.length === 0 && <p className="text-gray-500 text-sm">No questions yet. Click "Add Question" to start.</p>}
             </div>
 
-            {/* Rewards Section */}
-            <div className="border-t pt-6 mt-6">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">Rewards</h3>
-              <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-6">
-                <div>
-                  <label htmlFor="rewards_points" className="block text-sm font-medium text-gray-700 mb-1">Points</label> {/* Standardized label */}
-                  <input
-                    type="number"
-                    id="rewards_points"
-                    name="points"
-                    value={quiz.rewards.points || 0}
-                    onChange={handleRewardChange}
-                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="rewards_badge_name" className="block text-sm font-medium text-gray-700 mb-1">Badge Name</label> {/* Standardized label */}
-                  <input
-                    type="text"
-                    id="rewards_badge_name"
-                    name="badge_name"
-                    value={quiz.rewards.badge_name || ""}
-                    onChange={handleRewardChange}
-                    placeholder="e.g., History Buff"
-                    className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
-                  />
-                </div>
-              </div>
-            </div>
-            
             {/* Action Buttons */}
             <div className="flex flex-col md:flex-row gap-3 pt-6 mt-6 border-t border-gray-200"> {/* Standardized spacing and border */}
               <button

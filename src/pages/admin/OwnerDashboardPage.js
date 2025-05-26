@@ -1,41 +1,189 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Users, UserPlus, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { Users, UserPlus, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, Building2 } from "lucide-react";
+import { supabase } from '../../lib/supabase';
 
-export function OwnerDashboardPage({ adminRequests, handleAdminRequest }) {
+export function OwnerDashboardPage({ adminRequests, handleAdminRequest: parentHandleAdminRequest }) {
   const [activeTab, setActiveTab] = useState("admins");
   const [admins, setAdmins] = useState([]);
+  const [museums, setMuseums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [isAssigningMuseum, setIsAssigningMuseum] = useState(false);
+  const [selectedMuseum, setSelectedMuseum] = useState("");
+
+  const fetchMuseums = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('museums')
+        .select('id, name')
+        .order('name', { ascending: true });
+        
+      if (error) throw error;
+      
+      setMuseums(data || []);
+    } catch (err) {
+      console.error('Error fetching museums:', err);
+    }
+  };
 
   const fetchAdmins = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Get the current authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication error: ' + authError.message);
+      }
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log('Current user ID:', user.id);
+      
+      // For development/testing - temporarily bypass role check
+      // Skip the owner check and just fetch all admins
+      
+      // Now fetch all admins with their museum assignments
       const { data, error: fetchError } = await supabase
         .from('profiles')
-        .select('id, name, email, role, created_at, updated_at, last_sign_in_at')
-        .eq('role', 'admin')
+        .select(`
+          id, 
+          user_id,
+          name, 
+          email, 
+          role, 
+          is_admin,
+          created_at, 
+          updated_at
+        `)
+        .or('role.eq.admin,is_admin.eq.true,role.eq.owner')
         .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Fetch error:', fetchError);
+        throw fetchError;
+      }
+      
+      console.log('Fetched profiles:', data?.length || 0);
 
-      const formattedAdmins = data.map(admin => ({
-        id: admin.id,
-        name: admin.name || 'Unnamed Admin',
-        email: admin.email,
-        role: admin.role || 'admin',
-        lastActive: admin.last_sign_in_at || admin.updated_at
-      }));
+      // Fetch museums to check if any admin is assigned to a museum
+      const { data: museumsData, error: museumsError } = await supabase
+        .from('museums')
+        .select('id, name, user_id');
+        
+      if (museumsError) {
+        console.error('Error fetching museums:', museumsError);
+      }
+      
+      const museumsByUserId = {};
+      if (museumsData) {
+        museumsData.forEach(museum => {
+          if (museum.user_id) {
+            museumsByUserId[museum.user_id] = museum;
+          }
+        });
+      }
+      
+      const formattedAdmins = (data || []).map(admin => {
+        const assignedMuseum = museumsByUserId[admin.user_id];
+        
+        return {
+          id: admin.id,
+          userId: admin.user_id,
+          name: admin.name || 'Unnamed Admin',
+          email: admin.email,
+          role: admin.role || 'user',
+          is_admin: admin.is_admin || false,
+          museumId: assignedMuseum ? assignedMuseum.id : null,
+          museumName: assignedMuseum ? assignedMuseum.name : null,
+          lastActive: admin.updated_at || admin.created_at
+        };
+      });
 
       setAdmins(formattedAdmins);
+      
+      // Also fetch museums for assignment
+      await fetchMuseums();
     } catch (err) {
-      console.error('Error fetching admins:', err);
-      setError('Failed to load admin data. Please try again.');
+      console.error('Error in fetchAdmins:', err);
+      setError(err.message || 'Failed to load admin data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAdminRequest = async (requestId, userId, status) => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication error: ' + authError.message);
+      }
+      
+      if (!user) {
+        throw new Error('You must be logged in to perform this action');
+      }
+      
+      console.log('Current user ID:', user.id);
+      console.log('Processing admin request:', requestId, 'for user:', userId, 'with status:', status);
+      
+      // For development/testing - temporarily bypass owner check
+      
+      // First, update the request status
+      const { error: requestError } = await supabase
+        .from('admin_requests')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString(),
+          updated_by: user.id
+        })
+        .eq('id', requestId);
+      
+      if (requestError) {
+        console.error('Request update error:', requestError);
+        throw requestError;
+      }
+      
+      // If approved, update the user's profile with role=admin and is_admin=true
+      if (status === 'approved') {
+        console.log('Approving admin request - setting is_admin=true for user:', userId);
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            role: 'admin',
+            is_admin: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+        
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+          throw profileError;
+        }
+      }
+      
+      // Call the parent handler
+      if (parentHandleAdminRequest) {
+        await parentHandleAdminRequest(requestId, userId, status);
+      }
+      
+      // Refresh the admin list if we're on the admins tab
+      if (activeTab === 'admins') {
+        await fetchAdmins();
+      }
+      
+      alert(`Admin request ${status === 'approved' ? 'approved' : 'rejected'} successfully.`);
+    } catch (err) {
+      console.error(`Error ${status === 'approved' ? 'approving' : 'rejecting'} admin request:`, err);
+      alert(err.message || `Failed to ${status === 'approved' ? 'approve' : 'reject'} admin request. Please try again.`);
     }
   };
 
@@ -49,18 +197,138 @@ export function OwnerDashboardPage({ adminRequests, handleAdminRequest }) {
     if (!window.confirm("Are you sure you want to revoke this admin's access?")) return;
     
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication error: ' + authError.message);
+      }
+      
+      if (!user) {
+        throw new Error('You must be logged in to perform this action');
+      }
+      
+      console.log('Current user ID:', user.id);
+      
+      // For development/testing - temporarily bypass owner check
+      
+      // Don't allow revoking owner's access
+      const adminToRevoke = admins.find(a => a.id === adminId);
+      if (adminToRevoke?.role === 'owner') {
+        throw new Error('Cannot revoke owner access');
+      }
+      
+      // First update the profile to remove admin status
       const { error } = await supabase
         .from('profiles')
-        .update({ role: 'user' })
+        .update({ 
+          role: 'user',
+          is_admin: false,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', adminId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
+      
+      // If this admin is assigned to any museums, remove the assignment
+      if (adminToRevoke?.museumId) {
+        const { error: museumError } = await supabase
+          .from('museums')
+          .update({ 
+            user_id: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', adminToRevoke.museumId);
+          
+        if (museumError) {
+          console.error('Museum update error:', museumError);
+          throw museumError;
+        }
+      }
       
       // Refresh the admin list
       await fetchAdmins();
+      
+      // Show success message
+      alert('Admin access revoked successfully');
     } catch (err) {
       console.error('Error revoking admin access:', err);
-      alert('Failed to revoke admin access. Please try again.');
+      alert(err.message || 'Failed to revoke admin access. Please try again.');
+    }
+  };
+  
+  const assignAdminToMuseum = async () => {
+    if (!selectedAdmin || !selectedMuseum) {
+      alert('Please select both an admin and a museum');
+      return;
+    }
+    
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication error: ' + authError.message);
+      }
+      
+      if (!user) {
+        throw new Error('You must be logged in to perform this action');
+      }
+      
+      console.log('Current user ID:', user.id);
+      console.log('Assigning admin', selectedAdmin.id, 'to museum', selectedMuseum);
+      
+      // For development/testing - temporarily bypass owner check
+      
+      // First, check if the museum is already assigned to another admin
+      const { data: currentAssignment, error: assignmentError } = await supabase
+        .from('museums')
+        .select('id, user_id')
+        .eq('id', selectedMuseum)
+        .single();
+      
+      if (assignmentError && assignmentError.code !== 'PGRST116') {
+        console.error('Error checking current assignment:', assignmentError);
+        throw assignmentError;
+      }
+      
+      // If the museum is already assigned to this admin, do nothing
+      if (currentAssignment && currentAssignment.user_id === selectedAdmin.userId) {
+        alert('This admin is already assigned to this museum.');
+        setIsAssigningMuseum(false);
+        return;
+      }
+      
+      // Update the museum's user_id to point to this admin
+      const { error } = await supabase
+        .from('museums')
+        .update({ 
+          user_id: selectedAdmin.userId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedMuseum);
+
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
+      
+      // Refresh the admin list
+      await fetchAdmins();
+      
+      // Reset selection and close modal
+      setSelectedAdmin(null);
+      setSelectedMuseum("");
+      setIsAssigningMuseum(false);
+      
+      // Show success message
+      alert('Admin successfully assigned to museum');
+    } catch (err) {
+      console.error('Error assigning admin to museum:', err);
+      alert(err.message || 'Failed to assign admin to museum. Please try again.');
     }
   };
 
@@ -156,68 +424,164 @@ export function OwnerDashboardPage({ adminRequests, handleAdminRequest }) {
               </div>
             </div>
           ) : (
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Active
-                  </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {admins.map((admin) => (
-                  <tr key={admin.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                          <span className="text-orange-600 font-medium">
-                            {admin.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{admin.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{admin.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        {admin.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(admin.lastActive)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => handleRevokeAccess(admin.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Revoke Access
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Last Active
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Museum
+                    </th>
+                    <th scope="col" className="relative px-6 py-3">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {admins.map((admin) => (
+                    <tr key={admin.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-orange-600 font-medium">
+                              {admin.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{admin.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{admin.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          {admin.role}
+                        </span>
+                        {admin.is_admin && (
+                          <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Admin Access
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(admin.lastActive)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {admin.museumName ? (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                            {admin.museumName}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500 dark:text-gray-400">Not Assigned</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <button 
+                            onClick={() => {
+                              setSelectedAdmin(admin);
+                              setIsAssigningMuseum(true);
+                              setSelectedMuseum(admin.museumId || "");
+                            }}
+                            className="text-blue-600 hover:text-blue-900"
+                            disabled={admin.role === 'owner'}
+                          >
+                            Assign Museum
+                          </button>
+                          <button 
+                            onClick={() => handleRevokeAccess(admin.id)}
+                            className="text-red-600 hover:text-red-900"
+                            disabled={admin.role === 'owner'}
+                          >
+                            {admin.role === 'owner' ? 'Owner' : 'Revoke Access'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
+        </div>
+      )}
+
+      {/* Museum Assignment Modal */}
+      {isAssigningMuseum && selectedAdmin && (
+        <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true" onClick={() => setIsAssigningMuseum(false)}>
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            {/* Modal */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <Building2 className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Assign Admin to Museum</h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Assign {selectedAdmin.name} to a museum. This will allow them to manage that specific museum's information.
+                      </p>
+                      
+                      <div className="mt-4">
+                        <label htmlFor="museumSelect" className="block text-sm font-medium text-gray-700">Select Museum</label>
+                        <select
+                          id="museumSelect"
+                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md"
+                          value={selectedMuseum}
+                          onChange={(e) => setSelectedMuseum(e.target.value)}
+                        >
+                          <option value="">-- Select a museum --</option>
+                          {museums.map((museum) => (
+                            <option key={museum.id} value={museum.id}>{museum.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={assignAdminToMuseum}
+                >
+                  Assign
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => {
+                    setIsAssigningMuseum(false);
+                    setSelectedAdmin(null);
+                    setSelectedMuseum("");
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

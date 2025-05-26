@@ -6,7 +6,6 @@ const initialArtifactState = {
   name: "",
   description: "",
   image_url: "", // Changed from image file to URL
-  origin: "", // Assuming 'origin' is part of your schema
   period: "",
   museum_id: null,
 };
@@ -132,16 +131,7 @@ const ArtifactCreatePage = () => {
                 required 
               />
             </div>
-            <div>
-              <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-              <input 
-                id="origin"
-                name="origin"
-                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" 
-                value={artifactData.origin} 
-                onChange={handleInputChange} 
-              />
-            </div>
+
             <div>
               <label htmlFor="period" className="block text-sm font-medium text-gray-700 mb-1">Period</label>
               <input 

@@ -40,10 +40,20 @@ export function Navigation() {
     }, [supabase, darkMode]); // Rerun effect if supabase instance or darkMode changes
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        setIsLoggedIn(false);
-        setIsAdmin(false);
-        navigate(isAdmin ? '/admin/dashboard' : '/dashboard');
+        try {
+            await supabase.auth.signOut();
+            // Navigate to home page first
+            navigate('/');
+            // Then update state
+            setIsLoggedIn(false);
+            setIsAdmin(false);
+        } catch (error) {
+            console.error('Error during logout:', error);
+            // Still update state and navigate even if there's an error
+            setIsLoggedIn(false);
+            setIsAdmin(false);
+            navigate('/');
+        }
     };
 
     const toggleMenu = () => {

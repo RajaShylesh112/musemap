@@ -7,8 +7,7 @@ const dummyArtifactData = {
   museum_id: "", 
   period: "Sample Period (e.g., Ancient Era)",
   description: "Enter a detailed description of the artifact, its history, and significance.",
-  image_url: "https://via.placeholder.com/300x200.png?text=Sample+Artifact",
-  origin: "Sample Origin (e.g., Location)" 
+  image_url: "https://via.placeholder.com/300x200.png?text=Sample+Artifact"
 };
 
 const ArtifactEditPage = () => {
@@ -17,7 +16,7 @@ const ArtifactEditPage = () => {
   const supabase = getSupabase();
 
   const initialFormState = artifactId ? 
-    { name: "", museum_id: "", period: "", description: "", image_url: "", origin: "" } : 
+    { name: "", museum_id: "", period: "", description: "", image_url: "" } : 
     dummyArtifactData;
 
   const [artifact, setArtifact] = useState(initialFormState);
@@ -142,7 +141,6 @@ const ArtifactEditPage = () => {
         period: artifact.period,
         description: artifact.description,
         image_url: artifact.image_url,
-        origin: artifact.origin, 
       };
 
       const { data, error } = await supabase
@@ -220,20 +218,7 @@ const ArtifactEditPage = () => {
               </select>
             </div>
 
-            <div>
-                <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">Origin</label> {/* Standardized label */}
-                <input
-                id="origin"
-                name="origin"
-                type="text"
-                value={artifact.origin || ""}
-                onChange={handleChange}
-                placeholder="e.g., Harappa, Mughal Empire"
-                className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-gray-50" /* Consistent input */
-                />
-            </div>
-
-            <div>
+<div>
               <label htmlFor="period" className="block text-sm font-medium text-gray-700 mb-1">Period</label> {/* Standardized label */}
               <input
                 id="period"
