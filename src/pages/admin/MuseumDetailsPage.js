@@ -263,7 +263,13 @@ const initialMuseumState = {
   contact_email: "",
   facilities: "",
   opening_hours: {}, // Will be populated from database
-  ticket_price: { Adult: 0, Child: 0, Student: 0, Senior: 0, Foreigner: 0 },
+  ticket_price: { 
+    indian_nationals: 50, 
+    students_with_id: 20, 
+    children_below_12: 0, 
+    foreign_nationals: 650, 
+    photography_permit: 100 
+  },
   about: "",
   interesting_facts: "",
   image_url: "",
@@ -379,9 +385,22 @@ const MuseumDetailsPage = () => {
           });
         }
 
-        // Prepare form data
+        // Prepare form data with default ticket prices if not present in DB
+        const defaultTicketPrices = {
+          indian_nationals: 50,
+          students_with_id: 20,
+          children_below_12: 0,
+          foreign_nationals: 650,
+          photography_permit: 100
+        };
+
         const formData = {
-          ...museumData,
+          ...initialMuseumState, // Start with default values
+          ...museumData, // Override with database values
+          ticket_price: {
+            ...defaultTicketPrices, // Default values
+            ...(museumData.ticket_price || {}) // Database values override defaults
+          },
           opening_hours: openingHours,
           facilities: Array.isArray(museumData.facilities) ? museumData.facilities.join(', ') : (museumData.facilities || ''),
           interesting_facts: Array.isArray(museumData.interesting_facts) ? museumData.interesting_facts.join(', ') : (museumData.interesting_facts || ''),
@@ -572,10 +591,14 @@ const MuseumDetailsPage = () => {
   };
 
   const handlePriceChange = (type, value) => {
-    const newPrice = parseFloat(value);
+    // Ensure the value is a valid number and not negative
+    const numValue = Math.max(0, parseFloat(value) || 0);
     setForm(prevForm => ({
       ...prevForm,
-      ticket_price: { ...prevForm.ticket_price, [type]: isNaN(newPrice) ? 0 : newPrice }
+      ticket_price: { 
+        ...prevForm.ticket_price, 
+        [type]: isNaN(numValue) ? 0 : numValue 
+      }
     }));
   };
 
@@ -842,24 +865,100 @@ const MuseumDetailsPage = () => {
             </div>
           )}
           {activeTab === 2 && ( // Ticket Prices
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-3 text-gray-800">Ticket Prices</h3>
-              {Object.entries(form.ticket_price).map(([type, price]) => (
-                <div key={type} className="grid grid-cols-2 gap-4 items-center">
-                  <label htmlFor={`price-${type}`} className="text-sm font-medium text-gray-700">{type}</label>
-                  <div className="flex items-center">
-                      <span className="text-gray-500 mr-2">₹</span>
-                      <input
-                          id={`price-${type}`}
-                          type="number"
-                          min="0"
-                          value={price}
-                          onChange={e => handlePriceChange(type, e.target.value)}
-                          className="w-full rounded-md px-3 py-2 border border-gray-300 shadow-sm focus:ring-orange-500 focus:border-orange-500 bg-white text-sm"
-                      />
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ticket Prices (in ₹)</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Indian Nationals
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.ticket_price.indian_nationals}
+                      onChange={e => handlePriceChange('indian_nationals', e.target.value)}
+                      className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-3 pr-12 py-2 sm:text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
                   </div>
                 </div>
-              ))}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Foreign Nationals
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.ticket_price.foreign_nationals}
+                      onChange={e => handlePriceChange('foreign_nationals', e.target.value)}
+                      className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-3 pr-12 py-2 sm:text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Students (with ID)
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.ticket_price.students_with_id}
+                      onChange={e => handlePriceChange('students_with_id', e.target.value)}
+                      className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-3 pr-12 py-2 sm:text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Children (below 12)
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.ticket_price.children_below_12}
+                      onChange={e => handlePriceChange('children_below_12', e.target.value)}
+                      className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-3 pr-12 py-2 sm:text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Photography Permit
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.ticket_price.photography_permit}
+                      onChange={e => handlePriceChange('photography_permit', e.target.value)}
+                      className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-3 pr-12 py-2 sm:text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           {activeTab === 3 && ( // Content

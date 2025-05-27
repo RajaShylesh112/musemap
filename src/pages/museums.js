@@ -9,10 +9,12 @@ export function MuseumsPage() {
     const [museums, setMuseums] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [uniqueTypes, setUniqueTypes] = useState([]);
+    const [uniqueCities, setUniqueCities] = useState([]);
     const [filters, setFilters] = useState({
         location: '',
         type: '',
-        hours: ''
+        price: ''
     });
     
     const supabase = getSupabase(); // Get Supabase client instance
@@ -26,12 +28,31 @@ export function MuseumsPage() {
             }
             try {
                 setLoading(true); // Ensure loading is true at the start of fetch
-                const { data, error } = await supabase
+                const { data: museumsData, error: museumsError } = await supabase
                     .from('museums')
                     .select('*');
 
-                if (error) throw error;
-                setMuseums(data || []); // Ensure data is an array
+                if (museumsError) throw museumsError;
+                
+                // Get unique types from museums
+                const types = [...new Set(museumsData
+                    .map(museum => museum.type)
+                    .filter(type => type) // Remove null/undefined
+                )].sort();
+                
+                // Get unique cities from location strings (second part before comma)
+                const cities = [...new Set(museumsData
+                    .map(museum => {
+                        if (!museum.location) return null;
+                        const parts = museum.location.split(',').map(part => part.trim());
+                        return parts.length > 1 ? parts[1] : null;
+                    })
+                    .filter(city => city) // Remove null/undefined
+                )].sort();
+                
+                setMuseums(museumsData || []);
+                setUniqueTypes(types);
+                setUniqueCities(cities);
             } catch (error) {
                 console.error('Error fetching museums:', error); // Uncommented error log
             } finally {
@@ -53,19 +74,36 @@ export function MuseumsPage() {
     const filteredMuseums = museums.filter(museum => {
         const matchesSearch = museum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             museum.description.toLowerCase().includes(searchQuery.toLowerCase());
+            
+        // Extract city from location (second part before comma)
+        const locationParts = museum.location ? museum.location.split(',').map(part => part.trim()) : [];
+        const city = locationParts.length > 1 ? locationParts[1].toLowerCase() : '';
+        
         const matchesLocation = !filters.location || 
             museum.location.toLowerCase().includes(filters.location.toLowerCase()) ||
-            museum.name.toLowerCase().includes(filters.location.toLowerCase());
+            city.includes(filters.location.toLowerCase());
+            
+        const matchesType = !filters.type || 
+            (museum.type && museum.type.toLowerCase() === filters.type.toLowerCase());
+            
+        // Price filter logic
+        const matchesPrice = !filters.price || (() => {
+            // Use indian_nationals price for filtering
+            const price = parseFloat(museum.ticket_price?.indian_nationals);
+            if (isNaN(price)) {
+                return false; // No price information available
+            }
+            
+            switch(filters.price) {
+                case 'lt50': return price < 50;
+                case '50-200': return price >= 50 && price <= 200;
+                case '201-500': return price >= 201 && price <= 500;
+                case 'gt500': return price > 500;
+                default: return true;
+            }
+        })();
         
-        // Debugging logs
-        // console.log('Filtering museum:', {
-        //     name: museum.name,
-        //     location: museum.location,
-        //     matchesSearch,
-        //     matchesLocation
-        // });
-        
-        return matchesSearch && matchesLocation;
+        return matchesSearch && matchesLocation && matchesType && matchesPrice;
     });
 
     const getImage = (museumName, imageUrl) => {
@@ -105,9 +143,11 @@ export function MuseumsPage() {
                             className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-orange-300"
                         >
                             <option value="">All Locations</option>
-                            <option value="Delhi">Delhi</option>
-                            <option value="Mumbai">Mumbai</option>
-                            <option value="Kolkata">Kolkata</option>
+                            {uniqueCities.map(city => (
+                                <option key={city} value={city}>
+                                    {city}
+                                </option>
+                            ))}
                         </select>
                         <select
                             name="type"
@@ -116,20 +156,23 @@ export function MuseumsPage() {
                             className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-orange-300"
                         >
                             <option value="">All Types</option>
-                            <option value="art">Art</option>
-                            <option value="history">History</option>
-                            <option value="science">Science</option>
+                            {uniqueTypes.map(type => (
+                                <option key={type} value={type}>
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </option>
+                            ))}
                         </select>
                         <select
-                            name="hours"
-                            value={filters.hours}
+                            name="price"
+                            value={filters.price}
                             onChange={handleFilterChange}
                             className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-orange-300"
                         >
-                            <option value="">All Hours</option>
-                            <option value="morning">Morning</option>
-                            <option value="afternoon">Afternoon</option>
-                            <option value="evening">Evening</option>
+                            <option value="">All Prices</option>
+                            <option value="lt50">Under ₹50</option>
+                            <option value="50-200">₹50 - ₹200</option>
+                            <option value="201-500">₹201 - ₹500</option>
+                            <option value="gt500">Over ₹500</option>
                         </select>
                     </div>
                 </div>

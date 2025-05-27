@@ -175,20 +175,20 @@ export function RewardCriteriaPage() {
             {
                 id: 'audio_guide',
                 name: "Free Audio Guide",
-                points: 100,
+                points: 50,
                 description: "Enhance your next museum visit with a complimentary audio guide."
+            },
+            {
+                id: 'discount_5',
+                name: "5% Discount",
+                points: 100,
+                description: "Get 5% off your next ticket or gift shop purchase."
             },
             {
                 id: 'discount_10',
                 name: "10% Discount",
                 points: 200,
                 description: "Get 10% off your next ticket or gift shop purchase."
-            },
-            {
-                id: 'free_ticket',
-                name: "Free Ticket",
-                points: 500,
-                description: "Enjoy a free entry ticket to a museum of your choice."
             }
         ]
     };
